@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dashboard Koperasi</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body{font-family:Arial,sans-serif;margin:0;background:#f4f6f9;}
+header{background:linear-gradient(to right,#1e90ff,#0f3057);color:white;padding:16px;font-size:18px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;box-shadow:0 3px 8px rgba(0,0,0,0.2);}
+header button{background:#ffc107;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;}
+.container{padding:14px;max-width:1100px;margin:auto;}
+.grid{display:grid;grid-template-columns:1fr;gap:14px;}
+@media(min-width:700px){.grid{grid-template-columns:1fr 1fr;}}
+.card{background:white;padding:16px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,0.08);}
+.card h3{margin-top:0;margin-bottom:12px;font-size:15px;color:#333;}
+.top-list{font-size:13px;}
+.top-list div{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;}
+.top-list div:last-child{border-bottom:none;}
+.top-list span:last-child{font-weight:bold;color:#1e90ff;}
+</style>
+</head>
+<body>
+
+<header>
+<span>Dashboard Koperasi</span>
+<button onclick="logout()">Logout</button>
+</header>
+
+<div class="container">
+
+<div class="grid">
+<div class="card">
+<h3>Menu Cepat</h3>
+
+<button id="btnPinjaman">Daftar Pinjaman</button>
+<button id="btnAngsuran">Daftar Angsuran</button>
+<button id="btnKas">Laporan Kas</button>
+</div>
+
+<div class="card">
+<h3>Grafik Angsuran per Bulan</h3>
+<canvas id="chartAngsuran"></canvas>
+</div>
+
+<div class="card">
+<h3>Grafik Pelunasan Pinjaman</h3>
+<canvas id="chartPelunasan"></canvas>
+</div>
+
+<div class="card">
+<h3>Top Peminjam</h3>
+<div id="topPeminjam" class="top-list"></div>
+</div>
+
+</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig={
+apiKey:"AIzaSyDd0s73-qW2uiOlBWR-afybFZzMafCHeSo",
+authDomain:"arfa-c7dee.firebaseapp.com",
+databaseURL:"https://arfa-c7dee-default-rtdb.firebaseio.com",
+projectId:"arfa-c7dee",
+storageBucket:"arfa-c7dee.appspot.com",
+messagingSenderId:"468058520812",
+appId:"1:468058520812:web:f9cbc82fe7e88ecda9b9c9"
+};
+
+const app=initializeApp(firebaseConfig);
+const db=getDatabase(app);
+
+const pinjamanRef=ref(db,"/pinjaman");
+const angsuranRef=ref(db,"/angsuran");
+
+let dataPinjaman={}, dataAngsuran={};
+let chartAngsuran, chartPelunasan;
+
+const role = localStorage.getItem("role");
+if(!role){window.location.href="index.html";}
+
+function logout(){
+  localStorage.clear();
+  window.location.href="index.html";
+}
+
+function gotoPage(page){
+  window.location.href = page;
+}
+
+function rupiah(n){return n.toLocaleString("id-ID",{style:"currency",currency:"IDR"});}
+
+/* LOAD DATA */
+onValue(pinjamanRef,snap=>{
+dataPinjaman={};
+snap.forEach(d=>{dataPinjaman[d.key]=d.val()});
+renderDashboard();
+});
+
+onValue(angsuranRef,snap=>{
+dataAngsuran={};
+snap.forEach(d=>{dataAngsuran[d.key]=d.val()});
+renderDashboard();
+});
+
+function renderDashboard(){
+grafikAngsuran();
+grafikPelunasan();
+topPeminjam();
+}
+
+function grafikAngsuran(){
+let bulan={};
+Object.values(dataAngsuran).forEach(a=>{
+let t=new Date(a.tanggal);
+let key=t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0");
+bulan[key]=(bulan[key]||0)+a.jumlah;
+});
+let labels=Object.keys(bulan);
+let data=Object.values(bulan);
+if(chartAngsuran) chartAngsuran.destroy();
+chartAngsuran=new Chart(document.getElementById("chartAngsuran"),{type:"bar",data:{labels, datasets:[{label:"Angsuran",data}]}});  
+}
+
+function grafikPelunasan(){
+let labels=[], data=[];
+Object.entries(dataPinjaman).forEach(([pinId,p])=>{
+let totalPinjaman = p.jumlah||0, totalAngsuran=0;
+Object.values(dataAngsuran).forEach(a=>{if(a.pinjamanId===pinId) totalAngsuran+=a.jumlah||0;});
+let persen=totalPinjaman? (totalAngsuran/totalPinjaman)*100:0;
+labels.push(p.nama);
+data.push(persen);
+});
+if(chartPelunasan) chartPelunasan.destroy();
+chartPelunasan=new Chart(document.getElementById("chartPelunasan"),{type:"line",data:{labels,datasets:[{label:"% Pelunasan",data}]}});  
+}
+
+function topPeminjam(){
+let map={};
+Object.values(dataPinjaman).forEach(p=>{
+map[p.nama]= (map[p.nama]||0)+p.jumlah;
+});
+let arr=Object.entries(map).map(([nama,jumlah])=>({nama,jumlah})).sort((a,b)=>b.jumlah-a.jumlah).slice(0,10);
+let html=arr.map(p=>`<div><span>${p.nama}</span><span>${rupiah(p.jumlah)}</span></div>`).join('');
+if(!html) html="<div>Tidak ada anggota</div>";
+document.getElementById("topPeminjam").innerHTML=html;
+}
+
+document.getElementById("btnPinjaman").addEventListener("click",()=>window.location.href="pinjaman.html");
+document.getElementById("btnAngsuran").addEventListener("click",()=>window.location.href="angsuran.html");
+document.getElementById("btnKas").addEventListener("click",()=>window.location.href="kas.html");
+</script>
+</body>
+</html>

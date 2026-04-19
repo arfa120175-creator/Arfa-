@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buku Kas</title>
+
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable"></script>
+
+<style>
+body{
+  font-family:Arial;
+  margin:0;
+  background:#f4f6f9;
+}
+
+h3{text-align:center}
+
+header{
+  background: linear-gradient(to right, #1e90ff, #0f3057);
+  color:white;
+  padding:14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+button{
+  padding:6px 12px;
+  border:none;
+  border-radius:6px;
+  background:#1e90ff;
+  color:white;
+}
+
+.card{
+  background:white;
+  margin:10px;
+  padding:10px;
+  border-radius:10px;
+}
+
+.filter{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+input,select{
+  padding:6px;
+  border:1px solid #ccc;
+  border-radius:6px;
+}
+
+.summary{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:10px;
+  font-weight:bold;
+}
+
+.summary div{
+  background:#fff;
+  padding:8px;
+  border-radius:6px;
+  font-size:13px;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+th,td{
+  border:1px solid #ddd;
+  padding:6px;
+  font-size:12px;
+  text-align:center;
+}
+
+th{background:#f1f1f1}
+
+.masuk{color:green;font-weight:bold}
+.keluar{color:red;font-weight:bold}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div><b> ARFA DRIVER</b></div>
+  <button onclick="kembali()">Kembali</button>
+</header>
+
+<h3>BUKU KAS</h3>
+
+<div class="summary">
+  <div>Total Saldo : Rp <span id="saldo">0</span></div>
+  <div>Debit : Rp <span id="totalMasuk">0</span></div>
+  <div>Kredit : Rp <span id="totalKeluar">0</span></div>
+</div>
+
+<div class="card">
+<div class="filter">
+  <input type="date" id="tglAwal">
+  <input type="date" id="tglAkhir">
+
+  <select id="filterSumber">
+    <option value="semua">Semua</option>
+    <option value="cash">Cash</option>
+    <option value="bank">Bank</option>
+  </select>
+
+  <button onclick="filterData()">Filter</button>
+  <button onclick="resetFilter()">Reset</button>
+  <button onclick="exportPDF()">PDF</button>
+</div>
+</div>
+
+<table>
+<thead>
+<tr>
+<th>No</th>
+<th>Tanggal</th>
+<th>Keterangan</th>
+<th>Debit</th>
+<th>Kredit</th>
+<th>Saldo</th>
+</tr>
+</thead>
+<tbody id="laporanKas"></tbody>
+</table>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, onValue }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig={
+apiKey:"AIzaSyDd0s73-qW2uiOlBWR-afybFZzMafCHeSo",
+authDomain:"arfa-c7dee.firebaseapp.com",
+databaseURL:"https://arfa-c7dee-default-rtdb.firebaseio.com",
+projectId:"arfa-c7dee"
+};
+
+const app=initializeApp(firebaseConfig);
+const db=getDatabase(app);
+
+const kasRef=ref(db,"/kas");
+
+let laporanData=[];
+
+function rp(n){
+return Number(n||0).toLocaleString("id-ID");
+}
+
+function tgl(t){
+const d=new Date(t);
+return isNaN(d)?"-":d.toLocaleDateString("id-ID");
+}
+
+onValue(kasRef,(snap)=>{
+
+laporanData=[];
+
+if(snap.exists()){
+const data=snap.val();
+
+for(const k in data){
+const item=data[k];
+
+laporanData.push({
+tanggal:item.tanggal ? new Date(item.tanggal) : new Date(),
+keterangan:item.keterangan ?? "-",
+sumber:(item.sumberKas ?? "cash").toLowerCase(),
+masuk:item.tipe==="masuk" ? Number(item.jumlah) : 0,
+keluar:item.tipe==="keluar" ? Number(item.jumlah) : 0
+});
+}
+}
+
+tampilkan(laporanData);
+
+});
+
+function tampilkan(data){
+
+const tbody=document.getElementById("laporanKas");
+tbody.innerHTML="";
+
+let saldo=0;
+let totalMasuk=0;
+let totalKeluar=0;
+let no=1;
+
+data.sort((a,b)=>a.tanggal-b.tanggal);
+
+data.forEach(i=>{
+
+totalMasuk+=i.masuk;
+totalKeluar+=i.keluar;
+
+saldo += i.masuk - i.keluar;
+
+const tr=document.createElement("tr");
+
+tr.innerHTML=`
+<td>${no++}</td>
+<td>${tgl(i.tanggal)}</td>
+<td style="text-align:left">${i.keterangan}</td>
+<td class="masuk">${i.masuk ? "Rp "+rp(i.masuk) : "-"}</td>
+<td class="keluar">${i.keluar ? "Rp "+rp(i.keluar) : "-"}</td>
+<td><b>Rp ${rp(saldo)}</b></td>
+`;
+
+tbody.appendChild(tr);
+
+});
+
+document.getElementById("saldo").innerText=rp(saldo);
+document.getElementById("totalMasuk").innerText=rp(totalMasuk);
+document.getElementById("totalKeluar").innerText=rp(totalKeluar);
+
+}
+
+window.filterData=function(){
+
+const awal=document.getElementById("tglAwal").value;
+const akhir=document.getElementById("tglAkhir").value;
+const sumber=document.getElementById("filterSumber").value;
+
+let filtered=[...laporanData];
+
+if(awal && akhir){
+const a=new Date(awal);
+const b=new Date(akhir);
+b.setHours(23,59,59,999);
+
+filtered=filtered.filter(i=>i.tanggal>=a && i.tanggal<=b);
+}
+
+if(sumber!=="semua"){
+filtered=filtered.filter(i=>i.sumber===sumber);
+}
+
+tampilkan(filtered);
+
+}
+
+window.resetFilter=function(){
+document.getElementById("tglAwal").value="";
+document.getElementById("tglAkhir").value="";
+document.getElementById("filterSumber").value="semua";
+tampilkan(laporanData);
+}
+
+window.exportPDF=function(){
+
+const { jsPDF } = window.jspdf;
+const doc=new jsPDF();
+
+doc.text(" ARFA DRIVER",14,15);
+doc.text("BUKU KAS",14,22);
+
+let rows=[];
+
+document.querySelectorAll("#laporanKas tr").forEach(tr=>{
+const td=tr.querySelectorAll("td");
+
+rows.push([
+td[0].innerText,
+td[1].innerText,
+td[2].innerText,
+td[3].innerText,
+td[4].innerText,
+td[5].innerText
+]);
+});
+
+doc.autoTable({
+startY:30,
+head:[["No","Tanggal","Keterangan","Debit","Kredit","Saldo"]],
+body:rows
+});
+
+doc.save("buku_kas.pdf");
+
+}
+
+window.kembali=function(){
+window.location.href="dashboard.html";
+}
+
+</script>
+
+</body>
+</html>

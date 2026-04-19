@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laporan Kas Terpisah</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable"></script>
+  
+  <style>
+body{font-family:Arial;margin:0;padding:20px;background:#f4f6f9;font-size:13px;}
+h3,h4{margin:5px;}
+.table{width:100%;border-collapse:collapse;margin-top:5px;}
+.table th,.table td{border:1px solid #ddd;padding:6px;font-size:12px;text-align:center;}
+.table th{background:#f1f1f1;}
+.section{margin-top:20px;background:white;padding:10px;border-radius:8px;}
+.summary div{font-weight:bold;margin:2px 0;}
+button{margin:3px;padding:6px 10px;border:none;border-radius:6px;background:#1e90ff;color:white;}
+@media print{button{display:none;}body{background:white;}}
+</style>
+</head>
+
+<body>
+
+<h3>KOPERASI DRIVER KHALIFA</h3>
+<h4>LAPORAN KAS TERPISAH</h4>
+
+<button onclick="window.print()">🖨️ Print</button>
+<button onclick="shareWA()">📤 Share WA</button>
+<button onclick="exportPDF()">📄 Export PDF</button>
+<!-- TOTAL -->
+<div class="section">
+  <h4>💰 TOTAL</h4>
+  <div class="summary">
+    <div id="totalSaldo"></div>
+    <div id="totalMasuk"></div>
+    <div id="totalKeluar"></div>
+  </div>
+</div>
+
+<!-- CASH -->
+<div class="section">
+  <h4>💵 CASH</h4>
+  <div class="summary">
+    <div id="saldoCash"></div>
+    <div id="masukCash"></div>
+    <div id="keluarCash"></div>
+  </div>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Tanggal</th>
+        <th>Keterangan</th>
+        <th>Masuk</th>
+        <th>Keluar</th>
+        <th>Saldo</th>
+      </tr>
+    </thead>
+    <tbody id="tableCash"></tbody>
+  </table>
+</div>
+
+<!-- BANK -->
+<div class="section">
+  <h4>🏦 BANK</h4>
+  <div class="summary">
+    <div id="saldoBank"></div>
+    <div id="masukBank"></div>
+    <div id="keluarBank"></div>
+  </div>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Tanggal</th>
+        <th>Keterangan</th>
+        <th>Masuk</th>
+        <th>Keluar</th>
+        <th>Saldo</th>
+      </tr>
+    </thead>
+    <tbody id="tableBank"></tbody>
+  </table>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+const firebaseConfig = {
+  apiKey: "AIzaSyDd0s73-qW2uiOlBWR-afybFZzMafCHeSo",
+  authDomain: "arfa-c7dee.firebaseapp.com",
+  databaseURL: "https://arfa-c7dee-default-rtdb.firebaseio.com",
+  projectId: "arfa-c7dee"
+};
+
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const kasRef = ref(db,"/kas");
+
+let data = [];
+
+async function loadData(){
+  const snap = await get(kasRef);
+  if(!snap.exists()) return;
+
+  const raw = snap.val();
+
+  for(const k in raw){
+    let i = raw[k];
+    data.push({
+      tanggal:new Date(i.tanggal),
+      ket:i.keterangan || "-",
+      sumber:(i.sumberKas || "cash").toLowerCase(),
+      masuk:i.tipe==="masuk"?Number(i.jumlah):0,
+      keluar:i.tipe==="keluar"?Number(i.jumlah):0
+    });
+  }
+
+  render();
+}
+
+function render(){
+
+  data.sort((a,b)=>a.tanggal-b.tanggal);
+
+  let totalSaldo=0,totalMasuk=0,totalKeluar=0;
+
+  let cash = data.filter(i=>i.sumber==="cash");
+  let bank = data.filter(i=>i.sumber==="bank");
+
+  hitung("tableCash","saldoCash","masukCash","keluarCash",cash);
+  hitung("tableBank","saldoBank","masukBank","keluarBank",bank);
+
+  data.forEach(i=>{
+    totalSaldo += i.masuk - i.keluar;
+    totalMasuk += i.masuk;
+    totalKeluar += i.keluar;
+  });
+
+  document.getElementById("totalSaldo").innerText = "Saldo : Rp "+totalSaldo.toLocaleString("id-ID");
+  document.getElementById("totalMasuk").innerText = "Masuk : Rp "+totalMasuk.toLocaleString("id-ID");
+  document.getElementById("totalKeluar").innerText = "Keluar: Rp "+totalKeluar.toLocaleString("id-ID");
+}
+
+function hitung(tbodyId,saldoId,masukId,keluarId,arr){
+
+  let tbody = document.getElementById(tbodyId);
+  tbody.innerHTML="";
+
+  let saldo=0,masuk=0,keluar=0;
+
+  arr.forEach(i=>{
+    saldo += i.masuk - i.keluar;
+    masuk += i.masuk;
+    keluar += i.keluar;
+
+    let tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td>${i.tanggal.toLocaleDateString("id-ID")}</td>
+      <td>${i.ket}</td>
+      <td>${i.masuk? "Rp "+i.masuk.toLocaleString("id-ID"):"-"}</td>
+      <td>${i.keluar? "Rp "+i.keluar.toLocaleString("id-ID"):"-"}</td>
+      <td>Rp ${saldo.toLocaleString("id-ID")}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById(saldoId).innerText = "Saldo : Rp "+saldo.toLocaleString("id-ID");
+  document.getElementById(masukId).innerText = "Masuk : Rp "+masuk.toLocaleString("id-ID");
+  document.getElementById(keluarId).innerText = "Keluar: Rp "+keluar.toLocaleString("id-ID");
+}
+  
+function exportPDF(){
+
+  if(data.length === 0){
+    alert("Data belum siap!");
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF("p","mm","a4");
+
+  doc.setFontSize(12);
+  doc.text("KOPERASI DRIVER KHALIFA", 14, 15);
+  doc.text("LAPORAN KAS TERPISAH", 14, 22);
+
+  doc.setFontSize(10);
+  doc.text(document.getElementById("totalSaldo").innerText,14,30);
+  doc.text(document.getElementById("totalMasuk").innerText,14,35);
+  doc.text(document.getElementById("totalKeluar").innerText,14,40);
+
+  function buatTable(title, arr, startY){
+
+    let rows = [];
+    let saldo = 0;
+
+    arr.forEach(i=>{
+      saldo += i.masuk - i.keluar;
+
+      rows.push([
+        i.tanggal.toLocaleDateString("id-ID"),
+        i.ket,
+        i.masuk ? "Rp "+i.masuk.toLocaleString("id-ID") : "-",
+        i.keluar ? "Rp "+i.keluar.toLocaleString("id-ID") : "-",
+        "Rp "+saldo.toLocaleString("id-ID")
+      ]);
+    });
+
+    doc.text(title,14,startY);
+
+    doc.autoTable({
+      startY: startY + 3,
+      head: [["Tanggal","Keterangan","Masuk","Keluar","Saldo"]],
+      body: rows,
+      styles:{fontSize:8}
+    });
+
+    return doc.lastAutoTable.finalY + 10;
+  }
+
+  const cash = data.filter(i=>i.sumber==="cash");
+  const bank = data.filter(i=>i.sumber==="bank");
+
+  let y = 50;
+
+  y = buatTable("CASH", cash, y);
+  buatTable("BANK", bank, y);
+
+  // 🔥 INI KUNCINYA
+  const blobUrl = doc.output('bloburl');
+  window.open(blobUrl);
+}
+function shareWA(){
+
+  let text = "LAPORAN KAS\n\n";
+
+  text += document.getElementById("totalSaldo").innerText+"\n";
+  text += document.getElementById("totalMasuk").innerText+"\n";
+  text += document.getElementById("totalKeluar").innerText+"\n\n";
+
+  text += "CASH:\n"+document.getElementById("saldoCash").innerText+"\n";
+  text += "BANK:\n"+document.getElementById("saldoBank").innerText+"\n";
+
+  window.open("https://wa.me/?text="+encodeURIComponent(text));
+}
+window.exportPDF = exportPDF;
+window.shareWA = shareWA;
+loadData();
+</script>
+
+</body>
+</html>

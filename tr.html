@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laporan Pinjaman & Angsuran</title>
+
+<style>
+body{font-family:Arial,sans-serif;margin:0;background:#f4f6f9;}
+.container{padding:14px;}
+.card{background:white;padding:12px;margin-bottom:12px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.1);}
+.card h3{margin-top:0;}
+.table{width:100%;border-collapse:collapse;margin-top:10px;}
+.table th, .table td{border:1px solid #ddd;padding:6px;font-size:12px;text-align:left;}
+.table th{background:#1e90ff;color:white;font-weight:bold;font-size:13px;}
+.total{font-weight:bold;margin-top:8px;font-size:14px;}
+/* HEADER */  
+header{  
+  background: linear-gradient(to right, #1e90ff, #0f3057);  
+  color:white;  
+  padding:14px 20px;  
+  display:flex;  
+  justify-content:space-between;  
+  align-items:center;  
+  box-shadow:0 3px 10px rgba(0,0,0,0.2);  
+}  
+  
+.brand{  
+  display:flex;  
+  align-items:center;  
+  gap:10px;  
+}  
+  
+.brand img{  
+  width:42px;  
+  height:42px;  
+  border-radius:50%;  
+  object-fit:cover;  
+}  
+  
+.brand-text .subtitle{  
+  font-size:12px;  
+  opacity:0.9;  
+}  
+  
+.brand-text .title{  
+  font-size:16px;  
+  font-weight:bold;  
+}  
+  
+.user-section{  
+  position:relative;  
+  cursor:pointer;  
+  font-size:13px;  
+}  
+  
+.dropdown-menu{  
+  display:none;  
+  position:absolute;  
+  right:0;  
+  top:40px;  
+  background:white;  
+  color:#333;  
+  border-radius:10px;  
+  box-shadow:0 5px 15px rgba(0,0,0,0.2);  
+  overflow:hidden;  
+  min-width:130px;  
+}  
+  </style>
+  <head>
+  <body>
+  <header>  
+  <div class="brand">  
+    <img src="img/icon-192.png">  
+    <div class="brand-text">  
+      <div class="subtitle">Koperasi</div>  
+      <div class="title">ARFA DRIVER</div>  
+    </div>  
+  </div>  
+    <button onclick="window.location='dashboard.html'">Kembali</button>  
+</header>  
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+/* ===== Firebase Config ===== */
+const firebaseConfig = {
+  apiKey: "AIzaSyDd0s73-qW2uiOlBWR-afybFZzMafCHeSo",
+  authDomain: "arfa-c7dee.firebaseapp.com",
+  databaseURL: "https://arfa-c7dee-default-rtdb.firebaseio.com",
+  projectId: "arfa-c7dee",
+  storageBucket: "arfa-c7dee.firebasestorage.app",
+  messagingSenderId: "468058520812",
+  appId: "1:468058520812:web:f9cbc82fe7e88ecda9b9c9"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+/* References */
+const anggotaRef = ref(db, "/anggota");
+const pinjamanRef = ref(db, "/pinjaman");
+const angsuranRef = ref(db, "/angsuran");
+
+/* Container */
+const container = document.createElement("div");
+container.className="container";
+document.body.appendChild(container);
+
+/* Format Rupiah */
+function formatRp(n){ return Number(n||0).toLocaleString("id-ID"); }
+
+/* Format tanggal */
+function formatTanggal(tgl){
+  const d = new Date(tgl);
+  if(isNaN(d)) return tgl;
+  return d.toLocaleDateString("id-ID",{day:"2-digit",month:"short",year:"numeric"});
+}
+
+/* Load data & render laporan */
+async function renderLaporan(){
+  container.innerHTML = "<h3>Laporan Pinjaman & Angsuran</h3>";
+
+  // Ambil data
+  const [anggotaSnap, pinjamanSnap, angsuranSnap] = await Promise.all([
+    get(anggotaRef), get(pinjamanRef), get(angsuranRef)
+  ]);
+
+  const anggotaData = anggotaSnap.exists()? anggotaSnap.val() : {};
+  const pinjamanData = pinjamanSnap.exists()? pinjamanSnap.val() : {};
+  const angsuranData = angsuranSnap.exists()? angsuranSnap.val() : {};
+
+  // Buat rekap per anggota
+  const rekap = {};
+  // Pinjaman
+  for(const pid in pinjamanData){
+    const pin = pinjamanData[pid];
+    const aid = pin.anggotaId;
+    if(!rekap[aid]) rekap[aid]={nama:pin.nama,totalPinjaman:0,totalAngsuran:0,pinjaman:[],angsuran:[]};
+    rekap[aid].totalPinjaman += Number(pin.jumlah||0);
+    rekap[aid].pinjaman.push({
+      tanggal: pin.tanggal,
+      jumlah: pin.jumlah,
+      keterangan: pin.keterangan,
+      sumber: pin.sumber,
+      pinjamanId: pid
+    });
+  }
+  // Angsuran
+  for(const aid in pinjamanData){
+    // cari angsuran yang sesuai pinjaman
+    const pin = pinjamanData[aid];
+  }
+  for(const aid in angsuranData){
+    const ang = angsuranData[aid];
+    const pin = pinjamanData[ang.pinjamanId];
+    if(!pin) continue;
+    const anggotaId = pin.anggotaId;
+    if(!rekap[anggotaId]) rekap[anggotaId]={nama:pin.nama,totalPinjaman:0,totalAngsuran:0,pinjaman:[],angsuran:[]};
+    rekap[anggotaId].totalAngsuran += Number(ang.jumlah||0);
+    rekap[anggotaId].angsuran.push({
+      tanggal: ang.tanggal,
+      jumlah: ang.jumlah,
+      keterangan: ang.keterangan,
+      sumber: ang.sumber,
+      pinjamanId: ang.pinjamanId
+    });
+  }
+
+  // Render setiap anggota
+  for(const aid in rekap){
+    const r = rekap[aid];
+    const card = document.createElement("div");
+    card.className="card";
+    card.innerHTML = `
+      <div><strong>Anggota:</strong> ${r.nama}</div>
+      <div><strong>Total Pinjaman:</strong> Rp ${formatRp(r.totalPinjaman)}</div>
+      <div><strong>Total Angsuran:</strong> Rp ${formatRp(r.totalAngsuran)}</div>
+      <div><strong>Sisa:</strong> Rp ${formatRp(r.totalPinjaman - r.totalAngsuran)}</div>
+      <table class="table">
+        <tr>
+          <th>Tanggal</th>
+          <th>Jumlah</th>
+          <th>Keterangan</th>
+          
+        </tr>
+        ${r.pinjaman.map(p=>`
+          <tr>
+            <td>${formatTanggal(p.tanggal)}</td>
+            <td>Rp ${formatRp(p.jumlah)}</td>
+            
+            
+            <td>Pinjaman</td>
+          </tr>
+        `).join("")}
+        ${r.angsuran.map(a=>`
+          <tr>
+            <td>${formatTanggal(a.tanggal)}</td>
+            <td>Rp ${formatRp(a.jumlah)}</td>
+            
+            
+            <td>Angsuran</td>
+          </tr>
+        `).join("")}
+      </table>
+    `;
+    container.appendChild(card);
+  }
+}
+
+renderLaporan();
+
+</script>
+</body>
+</html>

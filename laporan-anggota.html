@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laporan Angsuran</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+<style>
+body{font-family:Arial;margin:0;background:#f4f6f9;}
+header{
+  background:linear-gradient(to right,#1e90ff,#0f3057);
+  color:#fff;
+  padding:14px 20px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand img{width:42px;height:42px;border-radius:50%;}
+.brand-text .title{font-size:16px;font-weight:bold;}
+button{padding:6px 12px;border:none;border-radius:6px;background:#1e90ff;color:#fff;}
+select{padding:6px;border-radius:6px;}
+.container{padding:15px;}
+.card{background:#fff;padding:12px;margin-bottom:12px;border-radius:10px;box-shadow:0 3px 10px rgba(0,0,0,.05);}
+.total-summary{padding:10px 15px;font-weight:bold;}
+.filter-box{padding:10px 15px;}
+h4{text-align:center;}
+#toastPDF{
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#1e90ff;
+  color:#fff;
+  padding:10px 15px;
+  border-radius:8px;
+  display:none;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="brand">
+    <img src="img/icon-192.png">
+    <div>
+      <div>Koperasi</div>
+      <div class="title">ARFA DRIVER</div>
+    </div>
+  </div>
+  <div>
+    <button onclick="location.href='dashboard.html'">Kembali</button>
+    <button onclick="exportPDF()">Export PDF</button>
+  </div>
+</header>
+
+<h4>LAPORAN PINJAMAN ANGGOTA</h4>
+
+<div class="filter-box">
+  Filter:
+  <select id="filterAnggota" onchange="render()">
+    <option value="all">Semua Anggota</option>
+  </select>
+</div>
+
+<div class="total-summary">
+  Total Pinjaman: Rp <span id="totalPinjaman">0</span><br>
+  Total Angsuran: Rp <span id="totalAngsuran">0</span>
+</div>
+
+<div class="container" id="cardsContainer"></div>
+
+<div id="toastPDF">Membuat PDF...</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDd0s73-qW2uiOlBWR-afybFZzMafCHeSo",
+  authDomain: "arfa-c7dee.firebaseapp.com",
+  databaseURL: "https://arfa-c7dee-default-rtdb.firebaseio.com",
+  projectId: "arfa-c7dee",
+  storageBucket: "arfa-c7dee.firebasestorage.app",
+  messagingSenderId: "468058520812",
+  appId: "1:468058520812:web:f9cbc82fe7e88ecda9b9c9"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const pinjamanRef = ref(db,"pinjaman");
+const angsuranRef = ref(db,"angsuran");
+
+let dataPinjaman = {};
+let dataAngsuran = {};
+
+const formatRp = n => Number(n||0).toLocaleString("id-ID");
+
+function toast(msg){
+  const t = document.getElementById("toastPDF");
+  t.innerText = msg;
+  t.style.display = "block";
+  setTimeout(()=>t.style.display="none",2000);
+}
+
+/* FILTER */
+function loadFilter(){
+  const sel = document.getElementById("filterAnggota");
+  sel.innerHTML = `<option value="all">Semua Anggota</option>`;
+  const set = new Set();
+  Object.values(dataPinjaman).forEach(p=>set.add(p.nama));
+  set.forEach(n=>sel.innerHTML += `<option value="${n}">${n}</option>`);
+}
+
+/* RENDER */
+window.render = function(){
+  const filter = document.getElementById("filterAnggota").value;
+  const container = document.getElementById("cardsContainer");
+  container.innerHTML = "";
+
+  let totalPin = 0, totalAng = 0;
+  const group = {};
+
+  Object.entries(dataPinjaman).forEach(([id,p])=>{
+    if(!group[p.nama]) group[p.nama] = [];
+    group[p.nama].push({id,...p});
+  });
+
+  for(const nama in group){
+
+    if(filter !== "all" && filter !== nama) continue;
+
+    let rows = "";
+    let tp=0, ta=0;
+
+    group[nama].forEach(p=>{
+
+      let angs = 0;
+
+      Object.values(dataAngsuran).forEach(a=>{
+        if(a.pinjamanId === p.id) angs += Number(a.jumlah||0);
+      });
+
+      const pin = Number(p.jumlah||0);
+      const sisa = pin - angs;
+      const status = sisa<=0 ? "LUNAS":"BELUM";
+
+      tp += pin;
+      ta += angs;
+
+      rows += `
+        <tr>
+          <td>${p.nomor||"-"}</td>
+          <td>Rp ${formatRp(pin)}</td>
+          <td>Rp ${formatRp(angs)}</td>
+          <td>Rp ${formatRp(sisa)}</td>
+          <td>${status}</td>
+        </tr>`;
+    });
+
+    totalPin += tp;
+    totalAng += ta;
+
+    container.innerHTML += `
+      <div class="card">
+        <h3>${nama}</h3>
+        <table border="1" width="100%" style="border-collapse:collapse;font-size:12px">
+          <tr style="background:#1e90ff;color:#fff">
+            <th>No</th><th>Pinjaman</th><th>Angsuran</th><th>Sisa</th><th>Status</th>
+          </tr>
+          ${rows}
+        </table>
+        <div style="margin-top:8px;font-weight:bold">
+          Total Pinjaman: Rp ${formatRp(tp)}<br>
+          Total Angsuran: Rp ${formatRp(ta)}
+        </div>
+      </div>`;
+  }
+
+  document.getElementById("totalPinjaman").innerText = formatRp(totalPin);
+  document.getElementById("totalAngsuran").innerText = formatRp(totalAng);
+};
+
+/* FIREBASE */
+onValue(pinjamanRef,s=>{
+  dataPinjaman = s.exists()?s.val():{};
+  loadFilter();
+  render();
+});
+
+onValue(angsuranRef,s=>{
+  dataAngsuran = s.exists()?s.val():{};
+  render();
+});
+
+/* PDF FIX */
+window.exportPDF = function () {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF("l", "mm", "a4");
+
+  const filter = document.getElementById("filterAnggota").value;
+  const date = new Date().toLocaleDateString("id-ID");
+
+  const group = {};
+
+  Object.entries(dataPinjaman).forEach(([id, p]) => {
+    if (!group[p.nama]) group[p.nama] = [];
+    group[p.nama].push({ id, ...p });
+  });
+
+  let first = true;
+
+  setTimeout(() => {
+
+    for (const nama in group) {
+
+      if (filter !== "all" && filter !== nama) continue;
+
+      if (!first) doc.addPage();
+      first = false;
+
+      let rows = [];
+      let tp = 0;
+      let ta = 0;
+
+      group[nama].forEach(p => {
+
+        let angs = 0;
+        let lastAngsuran = null;
+
+        Object.values(dataAngsuran).forEach(a => {
+          if (a.pinjamanId === p.id) {
+            angs += Number(a.jumlah || 0);
+
+            if (!lastAngsuran || a.tanggal > lastAngsuran) {
+              lastAngsuran = a.tanggal;
+            }
+          }
+        });
+
+        const tglPinjam = p.tanggal
+          ? new Date(Number(p.tanggal)).toLocaleDateString("id-ID")
+          : "-";
+
+        const tglAngsuran = lastAngsuran
+          ? new Date(lastAngsuran).toLocaleDateString("id-ID")
+          : "-";
+
+        const pin = Number(p.jumlah || 0);
+        const sisa = pin - angs;
+        const status = sisa <= 0 ? "LUNAS" : "BELUM";
+
+        tp += pin;
+        ta += angs;
+
+        rows.push([
+          p.nomor || "-",
+          tglPinjam,
+          formatRp(pin),
+          tglAngsuran,
+          formatRp(angs),
+          formatRp(sisa),
+          status
+        ]);
+      });
+
+      // ===== HEADER PDF (DI LUAR LOOP PINJAMAN) =====
+      doc.setFontSize(14);
+      doc.text("KOPERASI ARFA DRIVER", 148, 12, { align: "center" });
+
+      doc.setFontSize(11);
+      doc.text("LAPORAN ANGGOTA", 148, 18, { align: "center" });
+
+      doc.setFontSize(9);
+      doc.text("Tanggal cetak: " + date, 240, 28);
+
+      doc.text("Nama: " + nama, 15, 28);
+      doc.text("Total Pinjaman: " + formatRp(tp), 15, 34);
+      doc.text("Total Angsuran: " + formatRp(ta), 15, 40);
+
+      // ===== TABLE =====
+      doc.autoTable({
+        startY: 45,
+        head: [["No", "Tgl Pinjam", "Pinjaman", "Tgl Angsur", "Angsuran", "Sisa", "Status"]],
+        body: rows,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [30, 144, 255] }
+      });
+    }
+
+    // ===== DOWNLOAD FIX PWA =====
+    const pdfBlob = doc.output("blob");
+    const url = URL.createObjectURL(pdfBlob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "Laporan_Angsuran.pdf";
+    document.body.appendChild(a);
+    a.click();
+
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      a.remove();
+    }, 1000);
+
+  }, 300);
+};
+</script>
+
+</body>
+</html>
