@@ -183,8 +183,8 @@ function exportPDF(){
   const doc = new jsPDF("p","mm","a4");
 
   doc.setFontSize(12);
-  doc.text("KOPERASI DRIVER KHALIFA", 14, 15);
-  doc.text("LAPORAN KAS TERPISAH", 14, 22);
+  doc.text("KOPERASI DRIVER KHALIFA", 74, 25);
+  doc.text("LAPORAN KAS", 86, 32);
 
   doc.setFontSize(10);
   doc.text(document.getElementById("totalSaldo").innerText,14,30);
@@ -229,8 +229,8 @@ function exportPDF(){
   buatTable("BANK", bank, y);
 
   // 🔥 INI KUNCINYA
-  const blobUrl = doc.output('bloburl');
-  window.open(blobUrl);
+    const today = new Date().toLocaleDateString("id-ID").replace(/\//g,"-");
+doc.save(`Laporan_Kas_${today}.pdf`);
 }
 function shareWA(){
 
