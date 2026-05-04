@@ -1,42 +1,40 @@
-const CACHE_NAME = "arfa-koperasi-v4";
+const CACHE_NAME = "koperasi-app-v3"; // 🔥 ganti versi setiap update
+
 const urlsToCache = [
-  "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
-  "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js",
-  "./img/ims.png",
-  "./img/icon-192.png",
-  "./img/icon-512.png",  // <-- koma ditambahkan
   "./",
   "./index.html",
-  "./dashboard.html",
   "./anggota.html",
   "./kas.html",
-  "./simpanan.html",
-  "./pinjaman.html",
-  "./angsuran.html",
-  "./lap-kas.html",
-  "./pencairan.html",
-  "./backup.html",
-  "./manifest.json"
+  "./img/icon-192.png",
+  "./img/icon-512.png"
 ];
 
+// ✅ Install (cache file)
 self.addEventListener("install", event => {
+  self.skipWaiting(); // 🔥 langsung aktif tanpa nunggu
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(urlsToCache))
   );
-  self.skipWaiting();
 });
 
+// ✅ Activate (hapus cache lama)
 self.addEventListener("activate", event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys.filter(key => key !== CACHE_NAME)
-            .map(key => caches.delete(key))
-      )
-    ).then(() => self.clients.claim())
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cache => {
+          if (cache !== CACHE_NAME) {
+            return caches.delete(cache); // 🔥 hapus cache lama
+          }
+        })
+      );
+    })
   );
+  self.clients.claim(); // 🔥 langsung kontrol page
 });
 
+// ✅ Fetch (ambil dari cache dulu, kalau tidak ada ambil dari internet)
 self.addEventListener("fetch", event => {
   event.respondWith(
     caches.match(event.request).then(response => {

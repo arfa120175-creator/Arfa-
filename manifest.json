@@ -1,4 +1,4 @@
-  {
+{
   "name": "Koperasi App",
   "short_name": "Koperasi",
   "start_url": "./",
@@ -15,8 +15,8 @@
     {
       "src": "./img/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
-    "purpose": "any maskable"
-}
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }
