@@ -2,18 +2,21 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Koperasi App</title>
-
-  <link rel="icon" href="./img/icon-192.png">
+<link rel="icon" href="./img/icon-192.png?v=1">
 <link rel="apple-touch-icon" href="./img/icon-192.png">
-  <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#1e90ff">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Koperasi App">
 
+<link rel="manifest" href="./manifest.json">
+
+<meta name="theme-color" content="#1e90ff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Koperasi App">
+
+<!-- 🔥 TAMBAHAN PENTING -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
     <style>
   @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
   
@@ -237,6 +240,10 @@ function updateWaktu() {
 updateWaktu();
 setInterval(updateWaktu, 1000);
   
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js');
+}
+
   </script>
 </body>
 </html>
