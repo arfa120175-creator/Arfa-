@@ -9,12 +9,64 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
 <style>
-body {
-  font-family: Arial;
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+* {
+  box-sizing: border-box;
   margin: 0;
-  background: #f4f6f9;
-  font-size: 14px;
+  padding: 0;
 }
+
+:root {
+  --primary: #1e90ff;
+  --primary-dark: #0f3057;
+  --card: #ffffff;
+  --bg: #f4f6f9;
+  --text: #1f2937;
+}
+
+/* ===== BASE ===== */
+html, body {
+  margin:0;
+  padding:0;
+}
+
+
+
+/* ===== HEADER ===== */
+header {
+  background: linear-gradient(to right, var(--primary), var(--primary-dark));
+  color: white;
+  padding: 14px;
+  font-size: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.menu-btn {
+  font-size: 22px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+/* ===== CONTAINER ===== */
+.container {
+  padding: 16px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.card {
+  background: white;
+  padding: 14px;
+  border-radius: 10px;
+}
+
   header{
   background: linear-gradient(to right, #1e90ff, #0f3057);
   color:white;
@@ -133,21 +185,108 @@ table th {
 .modal-content button {
   margin-top: 10px;
 }
+  /* ===== SIDEBAR ===== */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 220px;
+  height: 100%;
+  background: var(--primary-dark);
+  color: white;
+  padding: 20px;
+  transform: translateX(-100%);
+  transition: 0.3s;
+  z-index: 1000;
+}
+
+.sidebar.open {
+  transform: translateX(0);
+}
+
+.sidebar h3 {
+  margin-bottom: 15px;
+}
+
+.sidebar a {
+  display: block;
+  color: white;
+  text-decoration: none;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.sidebar a:hover {
+  background: var(--primary);
+  transform: translateX(4px);
+}
+
+/* ===== OVERLAY ===== */
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4);
+  display: none;
+  z-index: 999;
+}
+/* ===== CANVAS ===== */
+canvas {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+/* ===== TOP LIST ===== */
+.top-list div {
+  display:flex;
+  justify-content:space-between;
+  padding:6px 0;
+  border-bottom:1px solid #eee;
+}
+
+/* ===== MOBILE ===== */
+@media(min-width:700px){
+  .grid{
+    grid-template-columns:1fr 1fr;
+  }
+}
 </style>
 </head>
-
 <body>
+  <!-- SIDEBAR -->
+  <div id="sidebar" class="sidebar">
+  <h3>Menu</h3>
+<a href="kas.html" class="menu-admin">💰 kas</a>
+<a href="simpanan.html" class="menu-admin">📄 Simpanan</a>
+<a href="backup.html" class="menu-admin">📊 backup Kas</a>
+
+  <a href="pinjaman.html" class="menu-admin">💰 Pinjaman</a>
+<a href="angsuran.html" class="menu-admin">📄 Angsuran</a>
+<a href="neraca.html">📊 Laporan Kas</a>
+<a href="laporan-anggota.html">📊 Laporan Anggota</a>
+    <a href="user.html" id="menuUser" class="menu-admin">👤 Kelola User</a>
+  <a href="#" id="btnLogoutSide">🚪 Logout</a>
+</div>
+
+  
+
+<!-- OVERLAY -->
+<div id="overlay" class="overlay"></div>
+
 <header>
-<div class="brand">
-<img src="img/icon-192.png">
-<div class="brand-text">
-<div class="subtitle">Koperasi</div>
-<div class="title">ARFA DRIVER</div>
-</div>
-</div>
-<div>Kas</div>
-<button onclick="kembali()">Kembali</button>
+  <div>
+    <span onclick="toggleSidebar()" class="menu-btn">☰</span>
+    Dashboard
+  </div>
+  <div id="userDisplay">👤 User</div>
 </header>
+
+
+
 
   <div class="container">
 
@@ -235,9 +374,31 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+/* ===== SIDEBAR ===== */
+window.toggleSidebar = function(){
+  const s = document.getElementById("sidebar");
+  const o = document.getElementById("overlay");
 
+  if(s.classList.contains("open")){
+    s.classList.remove("open");
+    o.style.display = "none";
+  } else {
+    s.classList.add("open");
+    o.style.display = "block";
+  }
+};
+
+document.getElementById("overlay")
+  .addEventListener("click", toggleSidebar);
+
+/* ===== LOGOUT ===== */
+document.getElementById("btnLogoutSide")
+  .addEventListener("click", ()=>{
+    localStorage.clear();
+    location.href="index.html";
+  });
 // Role check
-const role = localStorage.getItem("role") || "user";
+const role = localStorage.getItem("role") || "username";
 if(role !== "admin") {
   document.querySelector("#btnSimpan").style.display="none";
   document.querySelector("#jumlah").disabled=true;
@@ -246,7 +407,27 @@ if(role !== "admin") {
   document.querySelector("#sumberKas").disabled=true;
   document.querySelector("#tanggal").disabled=true;
 }
+/* 👋 USER INFO */
+document.addEventListener("DOMContentLoaded", () => {
+  const el = document.getElementById("userDisplay");
 
+  const username = localStorage.getItem("username");
+  const role = localStorage.getItem("role");
+
+  console.log("LOGIN DATA:", username, role);
+
+  if(!username || !role){
+    el.innerHTML = "⚠️ Belum login";
+    return;
+  }
+
+  const jam = new Date().getHours();
+  let salam = jam < 11 ? "Pagi" :
+              jam < 15 ? "Siang" :
+              jam < 18 ? "Sore" : "Malam";
+
+  el.innerHTML = `${salam}, <b>${username}</b> (${role})`;
+});
 // References
 const kasRef = ref(db,"kas");
 
@@ -286,49 +467,83 @@ document.getElementById("btnSimpan").onclick = async()=>{
   document.getElementById("keterangan").value="";
 }
 
+  
 // Load dan tampilkan kas
-onValue(kasRef, snap=>{
-  saldoCash = saldoBank = totalMasuk = totalKeluar = 0;
+onValue(kasRef, snap => {
+  saldoCash = 0;
+  saldoBank = 0;
+  totalMasuk = 0;
+  totalKeluar = 0;
+
   const riwayat = document.getElementById("riwayat");
   riwayat.innerHTML = "";
 
-  if(!snap.exists()) return;
-  const data = Object.entries(snap.val()).sort((a,b)=>Number(b[1].tanggal)-Number(a[1].tanggal));
+  if (!snap.exists()) return;
 
-  data.forEach(([key,i])=>{
+  const data = Object.entries(snap.val())
+    .sort((a, b) => Number(b[1].tanggal) - Number(a[1].tanggal));
+
+  data.forEach(([key, i]) => {
     const jumlah = Number(i.jumlah) || 0;
-    const tipe = String(i.tipe||"masuk").toLowerCase();
-    const sumber = String(i.sumberKas||"cash").toLowerCase();
-    let tanggal = i.tanggal ? new Date(Number(i.tanggal)).toLocaleString("id-ID") : "-";
+    const tipe = String(i.tipe || "masuk").toLowerCase();
+    const sumber = String(i.sumberKas || "cash").toLowerCase();
+    const tanggal = i.tanggal
+      ? new Date(Number(i.tanggal)).toLocaleString("id-ID")
+      : "-";
 
-    if(tipe==="masuk"){ totalMasuk += jumlah; }
-    else{ totalKeluar += jumlah; }
+    // hitung total
+    if (tipe === "masuk") totalMasuk += jumlah;
+    else totalKeluar += jumlah;
 
-    if(sumber==="cash"){ tipe==="masuk"? saldoCash += jumlah : saldoCash -= jumlah; }
-    if(sumber==="bank"){ tipe==="masuk"? saldoBank += jumlah : saldoBank -= jumlah; }
+    if (sumber === "cash") {
+      tipe === "masuk" ? saldoCash += jumlah : saldoCash -= jumlah;
+    }
+    if (sumber === "bank") {
+      tipe === "masuk" ? saldoBank += jumlah : saldoBank -= jumlah;
+    }
 
+    // 🔥 RINCIAN (POKOK & JASA)
+    let rincianHtml = "";
+    if (i.rincian) {
+      const pokok = Number(i.rincian.pokok) || 0;
+      const jasa = Number(i.rincian.jasa) || 0;
+
+      rincianHtml = `
+        <div style="font-size:11px;color:#666;margin-top:4px;">
+          Pokok: Rp ${formatRp(pokok)} |
+          Jasa: Rp ${formatRp(jasa)}
+        </div>
+      `;
+    }
+
+    // render row
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${tanggal}</td>
       <td class="${tipe}">${tipe.toUpperCase()}</td>
       <td>${sumber.toUpperCase()}</td>
       <td>Rp ${formatRp(jumlah)}</td>
-      <td>${i.keterangan||"-"}</td>
+      <td>
+        ${i.keterangan || "-"}
+        ${rincianHtml}
+      </td>
     `;
 
-    if(role==="admin"){
+    // klik edit (admin)
+    if (role === "admin") {
       tr.style.cursor = "pointer";
-      tr.addEventListener("click", ()=> editKas(key));
+      tr.addEventListener("click", () => editKas(key));
     }
 
     riwayat.appendChild(tr);
   });
 
+  // update dashboard
   document.getElementById("saldoCash").innerText = formatRp(saldoCash);
   document.getElementById("saldoBank").innerText = formatRp(saldoBank);
   document.getElementById("totalMasuk").innerText = formatRp(totalMasuk);
   document.getElementById("totalKeluar").innerText = formatRp(totalKeluar);
-  document.getElementById("saldoTotal").innerText = formatRp(saldoCash+saldoBank);
+  document.getElementById("saldoTotal").innerText = formatRp(saldoCash + saldoBank);
 });
 
 // Modal Edit Kas
@@ -383,7 +598,7 @@ window.hapusKasModal = async function(){
 }
     /* ================= KEMBALI ================= */
 window.kembali = function(){
-  window.location.href="dashboard.html";
+  window.location.href="dash.html";
 }
 </script>
 

@@ -100,7 +100,7 @@ header{background: linear-gradient(to right, #1e90ff, #0f3057);color:white;paddi
     <label>Tanggal</label>
     <input type="date" id="editTanggal">
     <label>Jumlah pinjaman</label>
-    <input type="text" id="editJumlah" readonly>
+    <input type="text" id="editJumlah" >
     <label>Jasa pinjaman</label>
 <input type="text" id="editJasa">
     <label>Metode</label>
@@ -134,7 +134,7 @@ const db = getDatabase(app);
 const role = localStorage.getItem("role") || "user";
 if(!role){
   alert("Silakan login dulu");
-  window.location.href="index.html";
+  window.location.href="dash.html";
 }
 const jumlahInput = document.getElementById("jumlah");
 const jasaInput = document.getElementById("jasa");

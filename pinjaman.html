@@ -48,12 +48,14 @@ h3{text-align:center}
   <b>Total Pinjaman</b><br>
   Rp <span id="totalPinjaman">0</span>
 </div>
+    <button onclick="perbaikiNomorDuplikat()">Perbaiki Nomor Dobel</button>
+    <button onclick="resetNomorPinjaman()">Reset Nomor</button>
     <div class="card" id="formPinjaman">  
 <h3>Tambah Pinjaman</h3>  <label>Anggota</label>
 <select id="anggota"></select>
 
 <label>No Pinjaman</label>
-<input type="text" id="noPinjaman" readonly value="Loading...">
+<input type="text" id="noPinjaman"  value="Loading...">
 
 <label>Tanggal</label>
 <input type="date" id="tanggal">
@@ -68,7 +70,8 @@ h3{text-align:center}
   <option value="lainnya">Lainnya</option>  
 </select>  <label>Jumlah</label>
 <input type="number" id="jumlah" min="1">
-
+<label>Jasa</label>
+<input type="number" id="jasa" min="0" value="0">
 <label>Keterangan</label>
 <input type="text" id="ket">
 
@@ -107,361 +110,421 @@ h3{text-align:center}
 <button onclick="tutupPopup()">Batal</button>
 
 </div>  
-</div>  <script>  
-const firebaseConfig={  
-apiKey:"AIzaSyDd0s73-qW2uiOlBWR-afybFZzMafCHeSo",  
-authDomain:"arfa-c7dee.firebaseapp.com",  
-databaseURL:"https://arfa-c7dee-default-rtdb.firebaseio.com",  
-projectId:"arfa-c7dee"  
-};  
-firebase.initializeApp(firebaseConfig);  
-const db=firebase.database();  
+</div>  
   
-if(!localStorage.getItem("role")){  
-alert("Silakan login dulu");  
-window.location.href="index.html";  
-}  
-  
-const role=localStorage.getItem("role") || "user";  
-const anggotaRef=db.ref("anggota");  
-const pinjamanRef=db.ref("pinjaman");  
-const kasRef = db.ref("kas");  
-  
-function hitungSaldoKas(){  
-  kasRef.on("value", snap=>{  
-    let saldo = 0;  
-  
-    snap.forEach(d=>{  
-      let k = d.val();  
-      let jumlah = Number(k.jumlah || 0);  
-  
-      if(k.tipe === "masuk") saldo += jumlah;  
-      else saldo -= jumlah;  
-    });  
-  
-    // 🔥 TAMBAHKAN DI SINI  
-    document.getElementById("saldoKas").innerText = format(saldo);  
-  
-    console.log("Saldo Kas:", saldo);  
-  });  
-}  
-  
-let dataPinjaman={}, editId=null;  
-const anggotaSelect=document.getElementById("anggota");  
-const editAnggota=document.getElementById("editAnggota");  
-const tabel=document.getElementById("tabelPinjaman");  
-const totalPinjaman=document.getElementById("totalPinjaman");  
-  
-function format(x){return new Intl.NumberFormat("id-ID").format(x)}  
-  
-  
-  // sinkron no//  
-  async function sinkronCounterPinjaman(){  
-  let max = 0;  
-  
-  let snap = await pinjamanRef.once("value");  
-  
-  snap.forEach(d=>{  
-    let p = d.val();  
-    if(p.nomor){  
-      let num = parseInt(p.nomor.replace("PJ","")) || 0;  
-      if(num > max) max = num;  
-    }  
-  });  
-  
-  await db.ref("counter/pinjaman").set(max);  
-  
-  alert("Counter berhasil diset ke PJ" + String(max).padStart(3,"0"));  
-}  
-// --- render tabel pinjaman ---  
-function renderPinjaman(){  
-  pinjamanRef.off();  
-  tabel.innerHTML = "";  
-  dataPinjaman = {};  
-  
-  pinjamanRef.on("value", snap=>{  
-    tabel.innerHTML="";  
-    let total = 0;  
-  
-    let filter = document.getElementById("filterMetode").value;  
-  
-    
-  
-    snap.forEach(d=>{  
-      let p=d.val();  
-      let id=d.key;  
-  
-      let metodeData = p.sumberKas || p.metode || "";  
-  
-      // 🔥 FILTER  
-      if(filter && metodeData !== filter){  
-        return;  
-      }  
-  
-      dataPinjaman[id]=p;  
-  
-      let jumlah=Number(p.jumlah||0);  
-      total += jumlah;  
-  
-      let tgl = "-";  
-      if (p.tanggal) {  
-        let d = new Date(Number(p.tanggal));  
-        if (!isNaN(d.getTime())) {  
-          tgl = d.toLocaleDateString("id-ID");  
-        }  
-      }  
-  
-      let card=document.createElement("div");  
-      card.className="card";  
-  
-      card.innerHTML=`  
-      <div style="display:flex;justify-content:space-between">  
-        <div><b>${p.nomor}</b></div>  
-        <div>${metodeData}</div>  
-      </div>  
-      <div>Anggota : ${p.nama}</div>  
-      <div>Tanggal : ${tgl}</div>  
-      <div>Pinjaman : Rp ${format(jumlah)}</div>  
-      <div>Keterangan : ${p.ket || "-"}</div>  
-  
-      <div style="text-align:right">  
-        ${role==="admin"?`  
-        <button class="icon-btn icon-edit" onclick="editPinjaman('${id}')">  
-          <span class="material-icons">edit</span>  
-        </button>  
-        <button class="icon-btn icon-delete" onclick="hapusPinjaman('${id}')">  
-          <span class="material-icons">delete</span>  
-        </button>`:``}  
-      </div>`;  
-  
-      tabel.appendChild(card);  
-    });  
-  
-    totalPinjaman.innerText=format(total);  
-  });  
-}  
-// --- load anggota ---  
-anggotaRef.on("value", snap=>{  
-  anggotaSelect.innerHTML="<option value=''>Pilih anggota</option>";  
-  editAnggota.innerHTML="<option value=''>Pilih anggota</option>";  
-  snap.forEach(d=>{  
-    let a=d.val();  
-    let opt=`<option value="${d.key}">${a.nama}</option>`;  
-    anggotaSelect.innerHTML+=opt;  
-    editAnggota.innerHTML+=opt;  
-  });  
-});  
-  
-// --- simpan pinjaman ---  
-async function simpanPinjaman(){
-  if(role!=="admin"){
-    alert("Hanya admin yang bisa menambah pinjaman");
-    return;
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getDatabase, ref, push, onValue, update, remove, get, runTransaction
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+// ================= CONFIG =================
+const firebaseConfig = {
+  apiKey: "AIzaSyDd0s73-qW2uiOlBWR-afybFZzMafCHeSo",
+  authDomain: "arfa-c7dee.firebaseapp.com",
+  databaseURL: "https://arfa-c7dee-default-rtdb.firebaseio.com",
+  projectId: "arfa-c7dee"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// ================= REF =================
+const anggotaRef = ref(db, "anggota");
+const pinjamanRef = ref(db, "pinjaman");
+const kasRef = ref(db, "kas");
+
+// ================= ROLE =================
+const role = localStorage.getItem("role") || "user";
+if (!localStorage.getItem("role")) {
+  alert("Silakan login dulu");
+  window.location.href = "index.html";
+}
+
+// ================= VAR =================
+let dataPinjaman = {};
+let dataAnggota = {};
+let editId = null;
+let kasIdLama = null;
+let sedangRepair = false;
+let repairTimeout;
+
+const anggotaSelect = document.getElementById("anggota");
+const editAnggotaSelect = document.getElementById("editAnggota");
+const tabel = document.getElementById("tabelPinjaman");
+const totalPinjamanEl = document.getElementById("totalPinjaman");
+
+// ================= HELPER =================
+function format(x) {
+  return new Intl.NumberFormat("id-ID").format(x || 0);
+}
+
+window.kembali = function(){
+  window.location.href = "dash.html";
+}
+
+window.tutupPopup = function(){
+  document.getElementById("popupEdit").style.display = "none";
+  editId = null;
+  kasIdLama = null;
+}
+
+// ================= AUTO REPAIR =================
+async function autoRepairNomor() {
+  if (sedangRepair) return;
+  sedangRepair = true;
+
+  try {
+    const snap = await get(pinjamanRef);
+    if (!snap.exists()) return;
+
+    let list = [];
+    snap.forEach(d => {
+      list.push({ id: d.key,...d.val() });
+    });
+
+    // urut tanggal
+    list.sort((a, b) => (a.tanggal || 0) - (b.tanggal || 0));
+
+    let updates = {};
+    let nomorBaru = 1;
+    let berubah = false;
+
+    list.forEach(item => {
+      let noBaru = "PJ" + String(nomorBaru).padStart(3, "0");
+
+      if (item.nomor!== noBaru) {
+        updates[`pinjaman/${item.id}/nomor`] = noBaru;
+        berubah = true;
+      }
+      nomorBaru++;
+    });
+
+    if (berubah) {
+      await update(ref(db), updates);
+      await update(ref(db, "counter"), {
+        pinjaman: nomorBaru - 1
+      });
+      console.log("Auto repair jalan");
+    }
+
+  } catch (err) {
+    console.error(err);
   }
 
-  let idAnggota = anggotaSelect.value;
-  let nama = anggotaSelect.options[anggotaSelect.selectedIndex].text;
-  let tanggalInput = document.getElementById("tanggal").value;
-  let jumlah = parseInt(document.getElementById("jumlah").value);
-  let metode = document.getElementById("metode").value;
-  let ket = document.getElementById("ket").value;
+  sedangRepair = false;
+}
 
-  if(!metode){
-    alert("Pilih metode terlebih dahulu!");
-    return;
-  }
+// delay biar ga spam
+function triggerAutoRepair() {
+  clearTimeout(repairTimeout);
+  repairTimeout = setTimeout(() => {
+    autoRepairNomor();
+  }, 500);
+}
 
-  if(!idAnggota || !tanggalInput || !jumlah){
-    alert("Isi semua field");
-    return;
-  }
+// ================= NO PINJAMAN =================
+async function getNoPinjaman() {
+  const counterRef = ref(db, "counter/pinjaman");
 
-  let tanggalTimestamp = new Date(tanggalInput).getTime();
-
-  // 🔥 AMBIL NOMOR DARI COUNTER
-  let counterRef = db.ref("counter/pinjaman");
-
-  let nomor = await counterRef.transaction(current=>{
+  let result = await runTransaction(counterRef, (current) => {
     return (current || 0) + 1;
-  }).then(res=>{
-    let no = res.snapshot.val();
-    return "PJ" + String(no).padStart(3,"0");
   });
 
-  // 🔥 SIMPAN KE KAS
-  let kasBaru = db.ref("kas").push();
-
-  await kasBaru.set({
-    tanggal: tanggalTimestamp,
-    keterangan: "Pinjaman " + nama,
-    tipe: "keluar",
-    sumberKas: metode,
-    jumlah
-  });
-
-  // 🔥 SIMPAN PINJAMAN
-  let newRef = pinjamanRef.push();
-
-  await newRef.set({
-    nomor,
-    idAnggota,
-    nama,
-    tanggal: tanggalTimestamp,
-    jumlah,
-    sumberKas: metode,
-    ket,
-    kasId: kasBaru.key
-  });
-
-  alert("Pinjaman tersimpan!");
-
-  // reset form
-  document.getElementById("jumlah").value="";
-  document.getElementById("ket").value="";
-  anggotaSelect.selectedIndex=0;
-
-  // 🔥 UPDATE NOMOR DI FORM
-  loadNoPinjaman();
+  let no = result.snapshot.val();
+  return "PJ" + String(no).padStart(3, "0");
 }
-  
-function editPinjaman(id) {  
-  if(role !== "admin") return;  
-  
-  let p = dataPinjaman[id];  
-  if(!p) return alert("Data tidak ditemukan");  
-  
-  editId = id;  
-  
-  // ✅ No Pinjaman (bisa diedit)  
-  document.getElementById("editNoPinjaman").value = p.nomor || "";  
-  
-  // ✅ Sumber Kas / Metode  
-  let sumber = p.sumberKas || p.metode || "cash";  
-  document.getElementById("editMetode").value = sumber;  
-  
-  // ✅ Jumlah  
-  document.getElementById("editJumlah").value = p.jumlah || 0;  
-  
-  // ✅ Keterangan  
-  document.getElementById("editKet").value = p.ket || "";  
-  
-  // ✅ Tanggal (support semua format)  
-  let tgl;  
-  
-  if(p.tanggal){  
-    if(!isNaN(p.tanggal)){  
-      tgl = new Date(Number(p.tanggal));  
-    } else {  
-      tgl = new Date(p.tanggal);  
-    }  
-  }  
-  
-  if(!tgl || isNaN(tgl.getTime())){  
-    tgl = new Date(); // fallback  
-  }  
-  
-  document.getElementById("editTanggal").value =  
-    tgl.toISOString().split("T")[0];  
-  
-  // ✅ Set anggota TANPA delay  
-  editAnggota.value = p.idAnggota || "";  
-  
-  // tampilkan popup  
-  document.getElementById("popupEdit").style.display = "flex";  
-}  
-  
-// --- update pinjaman ---  
-function updatePinjaman() {  
-  if (!editId) return;  
-  
-  const idAnggota = document.getElementById("editAnggota").value;  
-  const selected = editAnggota.options[editAnggota.selectedIndex];  
-  const nama = selected ? selected.text : "";  
-  
-  const nomor = document.getElementById("editNoPinjaman").value;  
-  if(!nomor){  
-  alert("No pinjaman tidak boleh kosong");  
-  return;  
-}  
-  const ket = document.getElementById("editKet").value;  
-  const metode = document.getElementById("editMetode").value;  
-  const tanggalInput = document.getElementById("editTanggal").value;  
-  const jumlah = Number(document.getElementById("editJumlah").value);  
-  
-  // VALIDASI  
-  if (!idAnggota || !tanggalInput || !jumlah) {  
-    alert("Isi semua field!");  
-    return;  
-  }  
-  
-  const tanggalTimestamp = new Date(tanggalInput).getTime();  
-  
-  // UPDATE PINJAMAN  
-  db.ref("pinjaman/" + editId).update({  
-    nomor,  
-    idAnggota,  
-    nama,  
-    tanggal: tanggalTimestamp,  
-    jumlah,  
-    sumberKas: metode, // 🔥 pakai ini biar konsisten  
-    ket  
-  })  
-  .then(() => {  
-  
-    // UPDATE KAS  
-    let p = dataPinjaman[editId];  
-let nama = document.getElementById("editNama")?.value || p.nama || "-";  
-  
-if (p && p.kasId) {  
-  return db.ref("kas/" + p.kasId).update({  
-    tanggal: tanggalTimestamp,  
-    sumberKas: metode,  
-    keterangan: "Pinjaman " + nama,  
-    jumlah: jumlah  
-  });  
-}  
-  
-  })  
-  .then(() => {  
-    alert("Data pinjaman & kas berhasil diupdate!");  
-    tutupPopup();  
-    editId = null;  
-    
-  })  
-  .catch(err => {  
-    console.error(err);  
-    alert("Gagal update: " + err.message);  
-  });  
-}  
-    
-// --- hapus pinjaman ---  
-function hapusPinjaman(id){  
-  if(!confirm("Hapus pinjaman ini?")) return;  
-  let p=dataPinjaman[id];  
-  db.ref("pinjaman/"+id).remove();  
-  if(p.kasId) db.ref("kas/"+p.kasId).remove();  
-}  
-  
-// --- popup ---  
-function tutupPopup(){document.getElementById("popupEdit").style.display="none";}  
-function kembali(){window.location="dashboard.html";}  
-  
-// hide form untuk user  
-if(role!=="admin") document.getElementById("formPinjaman").style.display="none";  
-document.getElementById("tanggal").valueAsDate=new Date();  
-  
-// --- init ---  
-  
-renderPinjaman();  
-  hitungSaldoKas();  
-  
-  /* ================= KEMBALI ================= */  
-window.kembali = function(){  
-  window.location.href="dashboard.html";  
-}  
-  window.onload = function(){
-  loadNoPinjaman();
+
+async function loadNoPinjaman() {
+  const snap = await get(pinjamanRef);
+  let max = 0;
+
+  snap.forEach(d => {
+    let nomor = d.val().nomor || "";
+    let n = Number(nomor.replace("PJ", ""));
+    if (n > max) max = n;
+  });
+
+  let next = max + 1;
+  document.getElementById("noPinjaman").value = "PJ" + String(next).padStart(3, "0");
 }
-    
-</script>  </body>  
+
+// ================= LOAD ANGGOTA =================
+onValue(anggotaRef, snap => {
+  dataAnggota = snap.val() || {};
+  anggotaSelect.innerHTML = "<option value=''>Pilih anggota</option>";
+  editAnggotaSelect.innerHTML = "<option value=''>Pilih anggota</option>";
+
+  snap.forEach(d => {
+    let a = d.val();
+    let opt = `<option value="${d.key}">${a.nama}</option>`;
+    anggotaSelect.innerHTML += opt;
+    editAnggotaSelect.innerHTML += opt;
+  });
+});
+
+// ================= RENDER =================
+onValue(pinjamanRef, snap => {
+  triggerAutoRepair(); // 🔥 auto jalan
+
+  tabel.innerHTML = "";
+  dataPinjaman = {};
+  let total = 0;
+
+  let list = [];
+  snap.forEach(d => {
+    list.push({ id: d.key,...d.val() });
+  });
+
+  // urut nomor
+  list.sort((a, b) => {
+    let na = Number((a.nomor || "").replace("PJ", ""));
+    let nb = Number((b.nomor || "").replace("PJ", ""));
+    return na - nb;
+  });
+
+  // filter metode
+  const filterMetode = document.getElementById("filterMetode").value;
+
+  list.forEach(p => {
+    if(filterMetode && p.sumberKas!== filterMetode) return;
+
+    let id = p.id;
+    let jumlah = Number(p.jumlah || 0);
+    let jasa = Number(p.jasa || 0);
+    let totalPinj = jumlah + jasa;
+
+    total += totalPinj;
+    dataPinjaman[id] = p;
+
+    let tgl = p.tanggal
+     ? new Date(Number(p.tanggal)).toLocaleDateString("id-ID")
+      : "-";
+
+    let card = document.createElement("div");
+    card.className = "card";
+
+    card.innerHTML = `
+    <div style="display:flex;justify-content:space-between">
+      <div><b>${p.nomor || "-"}</b></div>
+      <div>${p.sumberKas || ""}</div>
+    </div>
+    <div>Anggota : ${p.nama}</div>
+    <div>Tanggal : ${tgl}</div>
+    <div>Jumlah : Rp ${format(jumlah)}</div>
+    <div>Jasa : Rp ${format(jasa)}</div>
+    <div><b>Total : Rp ${format(totalPinj)}</b></div>
+    <div>Ket : ${p.ket || '-'}</div>
+
+    <div style="text-align:right;margin-top:8px">
+      ${role === "admin"? `
+      <button onclick="editPinjaman('${id}')">Edit</button>
+      <button style="background:#dc3545" onclick="hapusPinjaman('${id}')">Hapus</button>
+      ` : ""}
+    </div>
+    `;
+
+    tabel.appendChild(card);
+  });
+
+  totalPinjamanEl.innerText = format(total);
+});
+
+// ================= SIMPAN =================
+window.simpanPinjaman = async function() {
+  if (role!== "admin") return alert("Hanya admin");
+
+  try {
+    let idAnggota = anggotaSelect.value;
+    let nama = anggotaSelect.options[anggotaSelect.selectedIndex]?.text || "";
+    let tanggalInput = document.getElementById("tanggal").value;
+    let jumlah = Number(document.getElementById("jumlah").value);
+    let jasa = Number(document.getElementById("jasa").value) || 0;
+    let metode = document.getElementById("metode").value;
+    let ket = document.getElementById("ket").value;
+
+    if (!idAnggota) return alert("Pilih anggota!");
+    if (!tanggalInput) return alert("Isi tanggal!");
+    if (!metode) return alert("Pilih metode!");
+    if (!jumlah || jumlah <= 0) return alert("Jumlah harus > 0!");
+
+    let nomor = await getNoPinjaman();
+    let tanggal = new Date(tanggalInput).getTime();
+
+    // 1. Simpan kas keluar dulu
+    let kas = await push(kasRef, {
+      tanggal,
+      keterangan: "Pinjaman " + nama + " (" + nomor + ")",
+      tipe: "keluar",
+      sumberKas: metode,
+      jumlah: jumlah + jasa,
+      rincian: { pokok: jumlah, jasa: jasa }
+    });
+
+    // 2. Simpan pinjaman
+    await push(pinjamanRef, {
+      nomor,
+      idAnggota,
+      nama,
+      tanggal,
+      jumlah,
+      jasa,
+      sumberKas: metode,
+      ket,
+      kasId: kas.key
+    });
+
+    alert("Berhasil ✅");
+
+    document.getElementById("jumlah").value = "";
+    document.getElementById("jasa").value = "0";
+    document.getElementById("ket").value = "";
+
+    loadNoPinjaman();
+
+  } catch (err) {
+    alert("Gagal: " + err.message);
+  }
+}
+
+// ================= EDIT =================
+window.editPinjaman = function(id){
+  if (role!== "admin") return alert("Hanya admin");
+
+  const p = dataPinjaman[id];
+  if(!p) return;
+
+  editId = id;
+  kasIdLama = p.kasId;
+
+  document.getElementById("editNoPinjaman").value = p.nomor || "";
+  document.getElementById("editAnggota").value = p.idAnggota || "";
+  document.getElementById("editTanggal").value = p.tanggal?
+    new Date(Number(p.tanggal)).toISOString().split("T")[0] : "";
+  document.getElementById("editMetode").value = p.sumberKas || "";
+  document.getElementById("editJumlah").value = p.jumlah || 0;
+  document.getElementById("editKet").value = p.ket || "";
+
+  document.getElementById("popupEdit").style.display = "flex";
+}
+
+// ================= UPDATE =================
+window.updatePinjaman = async function(){
+  if(!editId) return;
+  if (role!== "admin") return alert("Hanya admin");
+
+  try {
+    let idAnggota = document.getElementById("editAnggota").value;
+    let nama = document.getElementById("editAnggota").options[document.getElementById("editAnggota").selectedIndex]?.text || "";
+    let tanggalInput = document.getElementById("editTanggal").value;
+    let jumlah = Number(document.getElementById("editJumlah").value);
+    let metode = document.getElementById("editMetode").value;
+    let ket = document.getElementById("editKet").value;
+    let nomor = document.getElementById("editNoPinjaman").value;
+
+    if (!idAnggota) return alert("Pilih anggota!");
+    if (!tanggalInput) return alert("Isi tanggal!");
+    if (!metode) return alert("Pilih metode!");
+    if (!jumlah || jumlah <= 0) return alert("Jumlah harus > 0!");
+
+    let tanggal = new Date(tanggalInput).getTime();
+
+    const updates = {};
+
+    // 1. Update pinjaman
+    updates[`pinjaman/${editId}`] = {
+      nomor,
+      idAnggota,
+      nama,
+      tanggal,
+      jumlah,
+      jasa: dataPinjaman[editId].jasa || 0,
+      sumberKas: metode,
+      ket,
+      kasId: kasIdLama
+    };
+
+    // 2. Update kas kalo ada
+    if(kasIdLama){
+      updates[`kas/${kasIdLama}/tanggal`] = tanggal;
+      updates[`kas/${kasIdLama}/keterangan`] = "Pinjaman " + nama + " (" + nomor + ")";
+      updates[`kas/${kasIdLama}/sumberKas`] = metode;
+      updates[`kas/${kasIdLama}/jumlah`] = jumlah + (dataPinjaman[editId].jasa || 0);
+      updates[`kas/${kasIdLama}/rincian/pokok`] = jumlah;
+    }
+
+    await update(ref(db), updates);
+
+    tutupPopup();
+    alert("Update berhasil ✅");
+
+  } catch (err) {
+    alert("Gagal update: " + err.message);
+  }
+}
+
+// ================= HAPUS =================
+window.hapusPinjaman = async function(id) {
+  if (role!== "admin") return alert("Hanya admin");
+  if (!confirm("Hapus pinjaman ini? Kas juga ikut kehapus!")) return;
+
+  try {
+    const p = dataPinjaman[id];
+    if(!p) return;
+
+    const updates = {};
+    updates[`pinjaman/${id}`] = null;
+
+    // Hapus kas terkait
+    if(p.kasId){
+      updates[`kas/${p.kasId}`] = null;
+    }
+
+    await update(ref(db), updates);
+    alert("Hapus berhasil ✅");
+
+  } catch (err) {
+    alert("Gagal hapus: " + err.message);
+  }
+}
+
+// ================= RESET NOMOR =================
+window.resetNomorPinjaman = async function(){
+  if (role!== "admin") return alert("Hanya admin");
+  if (!confirm("Reset semua nomor pinjaman? Urutkan ulang dari PJ001")) return;
+
+  await autoRepairNomor();
+  alert("Reset nomor selesai");
+}
+
+// ================= PERBAIKI DUPLIKAT =================
+window.perbaikiNomorDuplikat = async function(){
+  if (role!== "admin") return alert("Hanya admin");
+  await autoRepairNomor();
+  alert("Perbaikan selesai");
+}
+
+// ================= FILTER =================
+document.getElementById("filterMetode").addEventListener("change", () => {
+  // trigger render ulang
+  onValue(pinjamanRef, () => {});
+});
+
+// ================= INIT =================
+window.onload = function () {
+  loadNoPinjaman();
+  document.getElementById("tanggal").value = new Date().toISOString().split("T")[0];
+
+  // Sembunyikan form kalo bukan admin
+  if(role!== "admin"){
+    document.getElementById("formPinjaman").style.display = "none";
+  }
+};
+
+// Klik overlay tutup popup
+document.getElementById("popupEdit").addEventListener("click", function(e){
+  if(e.target === this) tutupPopup();
+});
+</script>
+</body>  
 </html>

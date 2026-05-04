@@ -7,39 +7,237 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-
 <style>
-body{font-family:Arial;margin:0;background:#f4f6f9;}
-header{
-  background:linear-gradient(to right,#1e90ff,#0f3057);
-  color:#fff;
-  padding:14px 20px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
-.brand{display:flex;align-items:center;gap:10px;}
-.brand img{width:42px;height:42px;border-radius:50%;}
-.brand-text .title{font-size:16px;font-weight:bold;}
-button{padding:6px 12px;border:none;border-radius:6px;background:#1e90ff;color:#fff;}
-select{padding:6px;border-radius:6px;}
-.container{padding:15px;}
-.card{background:#fff;padding:12px;margin-bottom:12px;border-radius:10px;box-shadow:0 3px 10px rgba(0,0,0,.05);}
-.total-summary{padding:10px 15px;font-weight:bold;}
-.filter-box{padding:10px 15px;}
-h4{text-align:center;}
-#toastPDF{
-  position:fixed;
-  bottom:20px;
-  left:50%;
-  transform:translateX(-50%);
-  background:#1e90ff;
-  color:#fff;
-  padding:10px 15px;
-  border-radius:8px;
-  display:none;
+
+:root {
+  --primary: #1e90ff;
+  --primary-dark: #0f3057;
+  --card: #ffffff;
+  --bg: #f1f5f9;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --border: #e2e8f0;
+  --shadow: 0 1px 2px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+  --radius: 10px;
+  --danger: #dc2626;
+  --success: #16a34a;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 13px; /* BASE DIKECILIN */
+}
+
+/* ===== HEADER ===== */
+header {
+  background: linear-gradient(to right, var(--primary), var(--primary-dark));
+  color: white;
+  padding: 10px 14px; /* KECILIN */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand img {
+  width: 34px; /* KECILIN */
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.brand-text .subtitle {
+  font-size: 10px; /* KECILIN */
+  opacity: 0.9;
+}
+
+.brand-text .title {
+  font-size: 13px; /* KECILIN */
+  font-weight: 700;
+}
+
+header button {
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #fff;
+  padding: 5px 10px; /* KECILIN */
+  border-radius: 16px;
+  font-size: 11px; /* KECILIN */
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+header button:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+/* ===== CONTAINER ===== */
+.container {
+  padding: 12px; /* KECILIN */
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ===== CARD ===== */
+.card {
+  background: var(--card);
+  padding: 12px; /* KECILIN */
+  border-radius: var(--radius);
+  margin-bottom: 10px; /* KECILIN */
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.card h3 {
+  margin: 0 0 12px 0;
+  font-size: 14px; /* KECILIN */
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* ===== FILTER ===== */
+.filter-box {
+  padding: 8px 12px; /* KECILIN */
+  font-size: 12px; /* KECILIN */
+}
+
+.filter-box select {
+  padding: 6px 8px; /* KECILIN */
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px; /* KECILIN */
+  font-family: 'Poppins', sans-serif;
+  margin: 0 4px;
+}
+
+.filter-box select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(30,144,255,0.1);
+}
+
+/* ===== SUMMARY ===== */
+.total-summary {
+  padding: 8px 12px; /* KECILIN */
+  font-weight: 600;
+  font-size: 12px; /* KECILIN */
+  line-height: 1.6;
+}
+
+h4 {
+  text-align: center;
+  font-size: 15px; /* KECILIN */
+  margin: 12px 0;
+  color: var(--primary-dark);
+}
+
+/* ===== TABLE ===== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px; /* KECILIN */
+}
+
+table th {
+  background: #f8fafc;
+  padding: 6px 8px; /* KECILIN */
+  text-align: left;
+  font-weight: 600;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  font-size: 11px; /* KECILIN */
+}
+
+table td {
+  padding: 6px 8px; /* KECILIN */
+  border: 1px solid var(--border);
+  font-size: 11px; /* KECILIN */
+}
+
+tr:hover {
+  background: #f8fafc;
+}
+
+/* ===== TOAST ===== */
+#toastPDF {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--primary);
+  color: #fff;
+  padding: 8px 12px; /* KECILIN */
+  border-radius: 8px;
+  display: none;
+  font-size: 12px; /* KECILIN */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* ===== MOBILE ===== */
+@media (max-width:768px){
+  body {
+    font-size: 12px;
+  }
+  
+  .container {
+    padding: 8px;
+  }
+  
+  .card {
+    padding: 10px;
+  }
+  
+  table {
+    font-size: 10px; /* LEBIH KECIL LAGI DI HP */
+  }
+  
+  table th, table td {
+    padding: 5px 6px;
+  }
+  
+  .brand img {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .brand-text .title {
+    font-size: 12px;
+  }
+  
+  h4 {
+    font-size: 14px;
+  }
 }
 </style>
+
 </head>
 
 <body>
@@ -53,7 +251,7 @@ h4{text-align:center;}
     </div>
   </div>
   <div>
-    <button onclick="location.href='dashboard.html'">Kembali</button>
+    <button onclick="location.href='dash.html'">Kembali</button>
     <button onclick="exportPDF()">Export PDF</button>
   </div>
 </header>
@@ -63,20 +261,27 @@ h4{text-align:center;}
 <div class="filter-box">
   Filter:
   <select id="filterAnggota" onchange="render()">
-    <option value="all">Semua Anggota</option>
-  </select>
+  <option value="all">Semua Anggota</option>
+</select>
+  <select id="filterStatus" onchange="render()">
+  <option value="all">Semua Status</option>
+  <option value="LUNAS">LUNAS</option>
+  <option value="BELUM">BELUM</option>
+</select>
 </div>
 
 <div class="total-summary">
   Total Pinjaman: Rp <span id="totalPinjaman">0</span><br>
-  Total Angsuran: Rp <span id="totalAngsuran">0</span>
+  Total Angsuran: Rp <span id="totalAngsuran">0</span><br>
+  Total Sisa: Rp <span id="totalSisa">0</span>
 </div>
 
 <div class="container" id="cardsContainer"></div>
 
 <div id="toastPDF">Membuat PDF...</div>
 
-<script type="module">
+  <script type="module"> 
+  
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
@@ -101,14 +306,7 @@ let dataAngsuran = {};
 
 const formatRp = n => Number(n||0).toLocaleString("id-ID");
 
-function toast(msg){
-  const t = document.getElementById("toastPDF");
-  t.innerText = msg;
-  t.style.display = "block";
-  setTimeout(()=>t.style.display="none",2000);
-}
-
-/* FILTER */
+/* FILTER ANGGOTA */
 function loadFilter(){
   const sel = document.getElementById("filterAnggota");
   sel.innerHTML = `<option value="all">Semua Anggota</option>`;
@@ -119,11 +317,18 @@ function loadFilter(){
 
 /* RENDER */
 window.render = function(){
-  const filter = document.getElementById("filterAnggota").value;
+
+  
+  const filterNamaEl = document.getElementById("filterAnggota");
+const filterNama = filterNamaEl ? filterNamaEl.value : "all";
+    const filterStatusEl = document.getElementById("filterStatus");
+  const filterStatus = filterStatusEl ? filterStatusEl.value : "all";
+  
   const container = document.getElementById("cardsContainer");
   container.innerHTML = "";
 
-  let totalPin = 0, totalAng = 0;
+  let totalPin = 0, totalAng = 0, totalSisa = 0;
+
   const group = {};
 
   Object.entries(dataPinjaman).forEach(([id,p])=>{
@@ -131,40 +336,62 @@ window.render = function(){
     group[p.nama].push({id,...p});
   });
 
+  
+  
+  
   for(const nama in group){
 
-    if(filter !== "all" && filter !== nama) continue;
-
+    if (
+  filterNama !== "all" &&
+  nama.trim().toLowerCase() !== filterNama.trim().toLowerCase()
+) continue;
     let rows = "";
-    let tp=0, ta=0;
+    let tp=0, ta=0, ts=0;
 
     group[nama].forEach(p=>{
 
       let angs = 0;
 
       Object.values(dataAngsuran).forEach(a=>{
-        if(a.pinjamanId === p.id) angs += Number(a.jumlah||0);
+        if(a.pinjamanId === p.id){
+          angs += Number(a.jumlah||0);
+        }
       });
 
       const pin = Number(p.jumlah||0);
       const sisa = pin - angs;
-      const status = sisa<=0 ? "LUNAS":"BELUM";
+      const status = sisa <= 0 ? "LUNAS" : "BELUM";
+
+      // 🔥 FILTER STATUS
+      if(filterStatus !== "all" && filterStatus !== status) return;
 
       tp += pin;
       ta += angs;
+      ts += sisa;
 
+      // 🔥 WARNA STATUS
+        
+        const warnaStatus = status === "LUNAS"
+  ? "background:#d4edda;color:#155724;padding:3px 8px;border-radius:6px"
+  : "background:#f8d7da;color:#721c24;padding:3px 8px;border-radius:6px";
+        
+      
       rows += `
         <tr>
           <td>${p.nomor||"-"}</td>
           <td>Rp ${formatRp(pin)}</td>
           <td>Rp ${formatRp(angs)}</td>
           <td>Rp ${formatRp(sisa)}</td>
-          <td>${status}</td>
+          <td style="${warnaStatus}">${status}</td>
         </tr>`;
     });
 
+    // skip kalau kosong setelah filter
+    if(rows === "") continue;
+
     totalPin += tp;
     totalAng += ta;
+    totalSisa += ts;
 
     container.innerHTML += `
       <div class="card">
@@ -177,13 +404,15 @@ window.render = function(){
         </table>
         <div style="margin-top:8px;font-weight:bold">
           Total Pinjaman: Rp ${formatRp(tp)}<br>
-          Total Angsuran: Rp ${formatRp(ta)}
+          Total Angsuran: Rp ${formatRp(ta)}<br>
+          Total Sisa: Rp ${formatRp(ts)}
         </div>
       </div>`;
   }
 
   document.getElementById("totalPinjaman").innerText = formatRp(totalPin);
   document.getElementById("totalAngsuran").innerText = formatRp(totalAng);
+  document.getElementById("totalSisa").innerText = formatRp(totalSisa);
 };
 
 /* FIREBASE */
@@ -197,13 +426,15 @@ onValue(angsuranRef,s=>{
   dataAngsuran = s.exists()?s.val():{};
   render();
 });
+  
+  window.exportPDF = function () {
 
-/* PDF FIX */
-window.exportPDF = function () {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF("l", "mm", "a4");
 
-  const filter = document.getElementById("filterAnggota").value;
+  const filterStatusEl = document.getElementById("filterStatus");
+  const filterStatus = filterStatusEl ? filterStatusEl.value : "all";
+
   const date = new Date().toLocaleDateString("id-ID");
 
   const group = {};
@@ -215,102 +446,281 @@ window.exportPDF = function () {
 
   let first = true;
 
-  setTimeout(() => {
+  for (const nama in group) {
 
-    for (const nama in group) {
+    let rows = [];
+    let tp = 0, ta = 0, ts = 0;
 
-      if (filter !== "all" && filter !== nama) continue;
+    group[nama].forEach(p => {
 
-      if (!first) doc.addPage();
-      first = false;
+      let angs = 0;
+      let lastAngsuran = null;
 
-      let rows = [];
-      let tp = 0;
-      let ta = 0;
+      Object.values(dataAngsuran).forEach(a => {
+        if (a.pinjamanId === p.id) {
+          angs += Number(a.jumlah || 0);
 
-      group[nama].forEach(p => {
-
-        let angs = 0;
-        let lastAngsuran = null;
-
-        Object.values(dataAngsuran).forEach(a => {
-          if (a.pinjamanId === p.id) {
-            angs += Number(a.jumlah || 0);
-
-            if (!lastAngsuran || a.tanggal > lastAngsuran) {
-              lastAngsuran = a.tanggal;
-            }
+          if (!lastAngsuran || a.tanggal > lastAngsuran) {
+            lastAngsuran = a.tanggal;
           }
-        });
-
-        const tglPinjam = p.tanggal
-          ? new Date(Number(p.tanggal)).toLocaleDateString("id-ID")
-          : "-";
-
-        const tglAngsuran = lastAngsuran
-          ? new Date(lastAngsuran).toLocaleDateString("id-ID")
-          : "-";
-
-        const pin = Number(p.jumlah || 0);
-        const sisa = pin - angs;
-        const status = sisa <= 0 ? "LUNAS" : "BELUM";
-
-        tp += pin;
-        ta += angs;
-
-        rows.push([
-          p.nomor || "-",
-          tglPinjam,
-          formatRp(pin),
-          tglAngsuran,
-          formatRp(angs),
-          formatRp(sisa),
-          status
-        ]);
+        }
       });
 
-      // ===== HEADER PDF (DI LUAR LOOP PINJAMAN) =====
-      doc.setFontSize(14);
-      doc.text("KOPERASI ARFA DRIVER", 148, 12, { align: "center" });
+      const pin = Number(p.jumlah || 0);
+      const sisa = pin - angs;
+      const status = sisa <= 0 ? "LUNAS" : "BELUM";
 
-      doc.setFontSize(11);
-      doc.text("LAPORAN ANGGOTA", 148, 18, { align: "center" });
+      // 🔥 FILTER STATUS (IKUT UI)
+      if (filterStatus !== "all" && filterStatus !== status) return;
 
-      doc.setFontSize(9);
-      doc.text("Tanggal cetak: " + date, 240, 28);
+      tp += pin;
+      ta += angs;
+      ts += sisa;
 
-      doc.text("Nama: " + nama, 15, 28);
-      doc.text("Total Pinjaman: " + formatRp(tp), 15, 34);
-      doc.text("Total Angsuran: " + formatRp(ta), 15, 40);
+      const tglPinjam = p.tanggal
+        ? new Date(Number(p.tanggal)).toLocaleDateString("id-ID")
+        : "-";
 
-      // ===== TABLE =====
-      doc.autoTable({
-        startY: 45,
-        head: [["No", "Tgl Pinjam", "Pinjaman", "Tgl Angsur", "Angsuran", "Sisa", "Status"]],
-        body: rows,
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [30, 144, 255] }
+      const tglAngsuran = lastAngsuran
+        ? new Date(lastAngsuran).toLocaleDateString("id-ID")
+        : "-";
+
+      rows.push([
+        p.nomor || "-",
+        tglPinjam,
+        "Rp " + formatRp(pin),
+        tglAngsuran,
+        "Rp " + formatRp(angs),
+        "Rp " + formatRp(sisa),
+        status
+      ]);
+    });
+
+    // skip kalau kosong
+    if (rows.length === 0) continue;
+
+    if (!first) doc.addPage();
+    first = false;
+
+    // ===== HEADER =====
+    doc.setFontSize(14);
+    doc.text("KOPERASI ARFA DRIVER", 148, 12, { align: "center" });
+
+    doc.setFontSize(11);
+    doc.text("LAPORAN PINJAMAN ANGGOTA", 148, 18, { align: "center" });
+
+    doc.setFontSize(9);
+    doc.text("Tanggal cetak: " + date, 240, 28);
+
+    doc.text("Nama: " + nama, 15, 28);
+    doc.text("Total Pinjaman: Rp " + formatRp(tp), 15, 34);
+    doc.text("Total Angsuran: Rp " + formatRp(ta), 15, 40);
+    doc.text("Total Sisa: Rp " + formatRp(ts), 15, 46);
+
+    // ===== TABLE =====
+    doc.autoTable({
+      startY: 52,
+      head: [["No", "Tgl Pinjam", "Pinjaman", "Tgl Angsur", "Angsuran", "Sisa", "Status"]],
+      body: rows,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [30, 144, 255] },
+
+      // 🔥 WARNA STATUS DI PDF
+      didParseCell: function (data) {
+        if (data.column.index === 6) {
+          if (data.cell.raw === "LUNAS") {
+            data.cell.styles.textColor = [0, 128, 0];
+          } else {
+            data.cell.styles.textColor = [200, 0, 0];
+          }
+        }
+      }
+    });
+  }
+
+  // ===== DOWNLOAD FIX (PWA AMAN) =====
+  window.exportPDF = function () {
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF("l", "mm", "a4");
+
+  // 🔥 ambil filter
+  const filterNamaEl = document.getElementById("filterAnggota");
+  const filterNama = filterNamaEl ? filterNamaEl.value : "all";
+
+  const filterStatusEl = document.getElementById("filterStatus");
+  const filterStatus = filterStatusEl ? filterStatusEl.value : "all";
+
+  const date = new Date().toLocaleDateString("id-ID");
+
+  // 🔥 grouping
+  const group = {};
+  Object.entries(dataPinjaman).forEach(([id, p]) => {
+    if (!group[p.nama]) group[p.nama] = [];
+    group[p.nama].push({ id, ...p });
+  });
+
+  let first = true;
+
+  for (const nama in group) {
+
+    // 🔥 FILTER ANGGOTA (ANTI ERROR SPASI & HURUF)
+    if (
+      filterNama !== "all" &&
+      nama.trim().toLowerCase() !== filterNama.trim().toLowerCase()
+    ) continue;
+
+    let rows = [];
+    let tp = 0, ta = 0, ts = 0;
+
+    group[nama].forEach(p => {
+
+      let angs = 0;
+      let lastAngsuran = null;
+
+      Object.values(dataAngsuran).forEach(a => {
+        if (a.pinjamanId === p.id) {
+          angs += Number(a.jumlah || 0);
+
+          if (!lastAngsuran || a.tanggal > lastAngsuran) {
+            lastAngsuran = a.tanggal;
+          }
+        }
       });
-    }
 
-    // ===== DOWNLOAD FIX PWA =====
-    const pdfBlob = doc.output("blob");
-    const url = URL.createObjectURL(pdfBlob);
+      const pin = Number(p.jumlah || 0);
+      const sisa = pin - angs;
+      const status = sisa <= 0 ? "LUNAS" : "BELUM";
 
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "Laporan_Angsuran.pdf";
-    document.body.appendChild(a);
-    a.click();
+      // 🔥 FILTER STATUS
+      if (filterStatus !== "all" && filterStatus !== status) return;
 
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-      a.remove();
-    }, 1000);
+      tp += pin;
+      ta += angs;
+      ts += sisa;
 
-  }, 300);
+      const tglPinjam = p.tanggal
+        ? new Date(Number(p.tanggal)).toLocaleDateString("id-ID")
+        : "-";
+
+      const tglAngsuran = lastAngsuran
+        ? new Date(lastAngsuran).toLocaleDateString("id-ID")
+        : "-";
+
+      rows.push([
+        p.nomor || "-",
+        tglPinjam,
+        "Rp " + formatRp(pin),
+        tglAngsuran,
+        "Rp " + formatRp(angs),
+        "Rp " + formatRp(sisa),
+        status
+      ]);
+    });
+
+    // 🔥 skip kalau kosong
+    if (rows.length === 0) continue;
+
+    if (!first) doc.addPage();
+    first = false;
+
+    // ===== HEADER =====
+    doc.setFontSize(14);
+    doc.text("KOPERASI ARFA DRIVER", 148, 12, { align: "center" });
+
+    doc.setFontSize(11);
+    doc.text("LAPORAN PINJAMAN ANGGOTA", 148, 18, { align: "center" });
+
+    doc.setFontSize(9);
+    doc.text("Tanggal cetak: " + date, 240, 28);
+
+    doc.text("Nama: " + nama, 15, 28);
+    doc.text("Total Pinjaman: Rp " + formatRp(tp), 15, 34);
+    doc.text("Total Angsuran: Rp " + formatRp(ta), 15, 40);
+    doc.text("Total Sisa: Rp " + formatRp(ts), 15, 46);
+
+    // ===== TABLE =====
+    doc.autoTable({
+      startY: 52,
+      head: [["No", "Tgl Pinjam", "Pinjaman", "Tgl Angsur", "Angsuran", "Sisa", "Status"]],
+      body: rows,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [30, 144, 255] },
+
+      // 🔥 warna status
+      didParseCell: function (data) {
+        if (data.column.index === 6) {
+          if (data.cell.raw === "LUNAS") {
+            data.cell.styles.textColor = [0, 128, 0];
+          } else {
+            data.cell.styles.textColor = [200, 0, 0];
+          }
+        }
+      }
+    });
+  }
+
+  // ===== NAMA FILE DINAMIS =====
+  let fileName = "Laporan_Angsuran";
+
+  if (filterNama !== "all") {
+    const namaClean = filterNama
+      .trim()
+      .replace(/\s+/g, "_")
+      .replace(/[^\w\-]/g, "");
+
+    fileName += "_" + namaClean;
+  }
+
+  const today = new Date().toLocaleDateString("id-ID").replace(/\//g,"-");
+  fileName += "_" + today + ".pdf";
+
+  // ===== DOWNLOAD FIX =====
+  const pdfBlob = doc.output("blob");
+  const url = URL.createObjectURL(pdfBlob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+    a.remove();
+  }, 1000);
 };
-</script>
+    const pdfBlob = doc.output("blob");
+  const url = URL.createObjectURL(pdfBlob);
 
+  const a = document.createElement("a");
+  a.href = url;
+  let fileName = "Laporan_Angsuran";
+
+const filterNamaEl = document.getElementById("filterAnggota");
+const filterNama = filterNamaEl ? filterNamaEl.value : "all";
+
+if (filterNama !== "all") {
+  const namaClean = filterNama
+    .replace(/\s+/g, "_")      // spasi jadi _
+    .replace(/[^\w\-]/g, "");  // hapus karakter aneh
+
+  fileName += "_" + namaClean;
+}
+
+const today = new Date().toLocaleDateString("id-ID").replace(/\//g,"-");
+
+fileName += "_" + today + ".pdf";
+
+a.download = fileName;
+    document.body.appendChild(a);
+  a.click();
+
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+    a.remove();
+  }, 1000);
+};
+  </script>
 </body>
 </html>

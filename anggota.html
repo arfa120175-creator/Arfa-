@@ -5,100 +5,420 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Data Anggota</title>
 <style>
-body{font-family:Arial;margin:0;background:#f4f6f9;}
-.container{padding:20px;}
-.card{background:white;padding:15px;margin-bottom:15px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.1);}
-input{padding:8px;margin-bottom:10px;width:100%;border-radius:6px;border:1px solid #ccc;}
-button{padding:6px 10px;border:none;border-radius:6px;cursor:pointer;color:white;}
-.btn-primary{background:#1e90ff;}
-.btn-edit{background:#ff9800;}
-.btn-delete{background:#e74c3c;}
-.anggota-container{display:flex;flex-wrap:wrap;gap:15px;}
-.anggota-card{background:white;width:280px;padding:15px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.1);border-left:6px solid #1e90ff;}
-.anggota-card h3{margin:0 0 10px 0;}
-.anggota-info{font-size:14px;margin-bottom:5px;}
-.aksi{margin-top:10px;display:flex;gap:5px;}
-/* HEADER */
-header{
-  background: linear-gradient(to right, #1e90ff, #0f3057);
-  color:white;
-  padding:14px 20px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  box-shadow:0 3px 10px rgba(0,0,0,0.2);
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-.brand{
-  display:flex;
-  align-items:center;
-  gap:10px;
+:root {
+  --primary: #1e90ff;
+  --primary-dark: #0f3057;
+  --card: #ffffff;
+  --bg: #f1f5f9;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --border: #e2e8f0;
+  --danger: #e74c3c;
+  --warning: #ff9800;
 }
 
-.brand img{
-  width:42px;
-  height:42px;
-  border-radius:50%;
-  object-fit:cover;
+body {
+  font-family: 'Poppins', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
 }
 
-.brand-text .subtitle{
-  font-size:12px;
-  opacity:0.9;
+/* ===== HEADER ===== */
+header {
+  background: linear-gradient(to right, var(--primary), var(--primary-dark));
+  color: white;
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-.brand-text .title{
-  font-size:16px;
-  font-weight:bold;
+.menu-btn {
+  cursor: pointer;
+  font-size: 22px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: 0.2s;
 }
 
-.user-section{
-  position:relative;
-  cursor:pointer;
-  font-size:13px;
+.menu-btn:hover {
+  background: rgba(255,255,255,0.15);
 }
 
-.dropdown-menu{
-  display:none;
-  position:absolute;
-  right:0;
-  top:40px;
-  background:white;
-  color:#333;
-  border-radius:10px;
-  box-shadow:0 5px 15px rgba(0,0,0,0.2);
-  overflow:hidden;
-  min-width:130px;
+.navbar span {
+  font-size: 16px;
+  font-weight: 700;
 }
 
-.dropdown-menu div{
-  padding:10px;
-  font-weight:bold;
+/* ===== SIDEBAR ===== */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 240px;
+  height: 100vh;
+  background: var(--primary-dark);
+  color: white;
+  padding: 10px 10px;
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1000;
+  overflow-y: auto;
 }
 
-.dropdown-menu div:hover{
-  background:#f0f0f0;
+.sidebar.open {
+  transform: translateX(0);
+  box-shadow: 4px 0 20px rgba(0,0,0,0.3);
 }
-  
-  
-  </style>
+
+.sidebar h3 {
+  margin-bottom: 16px;
+  font-size: 18px;
+  font-weight: 700;
+  padding: 8px 8px 10px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.sidebar a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #cbd5e1;
+  text-decoration: none;
+  padding: 9px 12px;
+  border-radius: 8px;
+  margin-bottom: 2px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.sidebar a:hover {
+  background: var(--primary);
+  color: white;
+  transform: translateX(3px);
+}
+
+.divider {
+  height: 1px;
+  background: rgba(255,255,255,0.1);
+  margin: 10px 8px;
+}
+
+/* ===== OVERLAY ===== */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4);
+  display: none;
+  z-index: 999;
+}
+
+/* ===== CONTAINER ===== */
+.container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ===== CARD FORM ===== */
+.card {
+  background: white;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.card h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.card input {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Poppins', sans-serif;
+  transition: all 0.2s;
+}
+
+.card input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(30,144,255,0.1);
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-primary:hover {
+  background: #187bdb;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+/* ===== ANGGOTA CARD ===== */
+.anggota-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.anggota-card {
+  background: white;
+  width: 280px;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.1);
+  border-left: 6px solid var(--primary);
+  transition: all 0.2s ease;
+}
+
+.anggota-card[onclick] {
+  cursor: pointer;
+}
+
+.anggota-card[onclick]:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,.15);
+  border-left-color: var(--warning);
+}
+
+.anggota-card[onclick]:active {
+  transform: scale(0.98);
+}
+
+.anggota-card h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.anggota-info {
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+}
+
+.anggota-info b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ===== POPUP EDIT ===== */
+.popup-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.popup-content {
+  background: white;
+  width: 100%;
+  max-width: 400px;
+  border-radius: 16px;
+  padding: 24px;
+  max-height: 85vh;
+  overflow: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  animation: popupIn 0.3s ease;
+}
+
+@keyframes popupIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.popup-content h3 {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--border);
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Poppins', sans-serif;
+  transition: all 0.2s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(30,144,255,0.1);
+}
+
+.form-group input:disabled {
+  background: #f1f5f9;
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.popup-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.popup-actions button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-delete {
+  background: var(--danger);
+  color: white;
+}
+
+.btn-delete:hover {
+  background: #c0392b;
+}
+
+.btn-cancel {
+  background: #f1f5f9;
+  color: var(--muted);
+}
+
+.btn-cancel:hover {
+  background: #e2e8f0;
+}
+
+.btn-save {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-save:hover {
+  background: #187bdb;
+}
+
+.btn-delete:active,.btn-cancel:active,.btn-save:active {
+  transform: scale(0.98);
+}
+
+/* ===== MOBILE ===== */
+@media(max-width:768px){
+ .anggota-card {
+    width: 100%;
+  }
+}
+
+@media(min-width:768px){
+  body {
+    margin-left: 240px;
+  }
+ .sidebar {
+    transform: translateX(0);
+  }
+ .overlay {
+    display: none!important;
+  }
+}
+</style>
 </head>
 <body>
 
+<!-- SIDEBAR -->
+<div id="sidebar" class="sidebar">
+  <h3>Menu</h3>
+  <a href="anggota.html">👤 Anggota</a>
+  <a href="kas.html">💰 Kas</a>
+  <a href="simpanan.html">📄 Simpanan</a>
+  <a href="backup.html">📊 Backup Kas</a>
+  <div class="divider"></div>
+  <a href="pinjaman.html">💰 Pinjaman</a>
+  <a href="angsuran.html">📄 Angsuran</a>
+  <a href="neraca.html">📊 Laporan Kas</a>
+  <a href="laporan-anggota.html">📊 Laporan Anggota</a>
+  <div class="divider"></div>
+  <a href="user.html" id="menuUser">👤 Kelola User</a>
+  <a href="#" id="btnLogoutSide">🚪 Logout</a>
+</div>
+
+<!-- OVERLAY -->
+<div id="overlay" class="overlay"></div>
+
 <header>
-  <div class="brand">
-    <img src="img/icon-192.png">
-    <div class="brand-text">
-      <div class="subtitle">Koperasi</div>
-      <div class="title">ARFA DRIVER</div>
-    </div>
+  <span class="menu-btn" onclick="toggleSidebar()">☰</span>
+  <div class="navbar">
+    <span>Dashboard Koperasi</span>
   </div>
-  <div>👥 Data Anggota</div>
-  <button class="btn-primary" onclick="kembali()">Kembali</button>
 </header>
 
 <div class="container">
-
   <!-- Form Tambah Anggota -->
   <div class="card" id="formTambah">
     <h3>Tambah Anggota</h3>
@@ -111,14 +431,44 @@ header{
 
   <!-- Daftar Anggota -->
   <div class="anggota-container" id="listAnggota"></div>
+</div>
 
+<!-- POPUP EDIT ANGGOTA -->
+<div id="popupEdit" class="popup-overlay">
+  <div class="popup-content">
+    <h3>Edit Anggota</h3>
+    <div class="form-group">
+      <label>ID Anggota</label>
+      <input type="text" id="editId" disabled>
+    </div>
+    <div class="form-group">
+      <label>Nama Anggota</label>
+      <input type="text" id="editNama" placeholder="Nama Lengkap">
+    </div>
+    <div class="form-group">
+      <label>Alamat</label>
+      <input type="text" id="editAlamat" placeholder="Alamat">
+    </div>
+    <div class="form-group">
+      <label>No Telepon</label>
+      <input type="text" id="editTelepon" placeholder="08xxx">
+    </div>
+    <div class="form-group">
+      <label>No Rekening</label>
+      <input type="text" id="editRekening" placeholder="No Rekening">
+    </div>
+    <div class="popup-actions">
+      <button class="btn-delete" onclick="hapusDariPopup()">Hapus</button>
+      <button class="btn-cancel" onclick="tutupPopupEdit()">Batal</button>
+      <button class="btn-save" onclick="simpanEdit()">Simpan</button>
+    </div>
+  </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, push, onValue, remove, get, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-/* Firebase config */
 const firebaseConfig = {
   apiKey: "AIzaSyDd0s73-qW2uiOlBWR-afybFZzMafCHeSo",
   authDomain: "arfa-c7dee.firebaseapp.com",
@@ -128,27 +478,48 @@ const firebaseConfig = {
   messagingSenderId: "468058520812",
   appId: "1:468058520812:web:f9cbc82fe7e88ecda9b9c9"
 };
+
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const anggotaRef = ref(db,"/anggota");
 
-/* Cek login & role */
-const usernameLogin = localStorage.getItem("user");
-const role = localStorage.getItem("role") || "user";
-if(!usernameLogin) window.location.href="index.html";
-
-/* Sembunyikan form tambah untuk user biasa */
-if(role !== "admin"){
-  const form = document.getElementById("formTambah");
-  form.querySelector("h3").innerText = "Tambah Anggota (Admin saja)";
-  form.querySelector("button").style.display = "none";
+// ================= LOGIN CHECK =================
+const username = localStorage.getItem("username");
+const role = localStorage.getItem("role");
+if(!username ||!role){
+  window.location.href = "index.html";
 }
 
-/* ================= AUTO ID ================= */
+// ================= SIDEBAR =================
+window.toggleSidebar = function(){
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("overlay");
+  sidebar.classList.toggle("open");
+  overlay.style.display = sidebar.classList.contains("open")? "block" : "none";
+}
+
+document.getElementById("overlay").addEventListener("click", toggleSidebar);
+
+// ================= ROLE FILTER =================
+if(role!== "admin"){
+  document.getElementById("formTambah").style.display = "none";
+  document.getElementById("menuUser").style.display = "none";
+}
+
+// ================= LOGOUT =================
+function logout(){
+  if(confirm("Yakin ingin logout?")){
+    localStorage.clear();
+    window.location.href = "index.html";
+  }
+}
+
+document.getElementById("btnLogoutSide").addEventListener("click", logout);
+
+// ================= AUTO ID =================
 async function generateId(){
   const snapshot = await get(anggotaRef);
   if(!snapshot.exists()) return "AG001";
-
   const data = snapshot.val();
   let max = 0;
   for(const key in data){
@@ -160,37 +531,28 @@ async function generateId(){
   return "AG" + (max+1).toString().padStart(3,"0");
 }
 
-/* ================= TAMPIL DATA ================= */
+// ================= TAMPIL DATA =================
 onValue(anggotaRef, (snapshot)=>{
   const container = document.getElementById("listAnggota");
   container.innerHTML = "";
   if(snapshot.exists()){
     const data = snapshot.val();
     for(const key in data){
-      let aksiHTML = "";
-      if(role === "admin"){
-        aksiHTML = `
-          <div class="aksi">
-            <button class="btn-edit" onclick="editAnggota('${key}')">Edit</button>
-            <button class="btn-delete" onclick="hapusAnggota('${key}')">Hapus</button>
-          </div>
-        `;
-      }
+      const clickAction = role === "admin"? `onclick="editAnggota('${key}')"` : '';
       container.innerHTML += `
-        <div class="anggota-card">
+        <div class="anggota-card" ${clickAction}>
           <h3>${data[key].nama}</h3>
-          <div class="anggota-info"><b>ID:</b> ${data[key].id}</div>
-          <div class="anggota-info"><b>Alamat:</b> ${data[key].alamat || "-"}</div>
-          <div class="anggota-info"><b>Telepon:</b> ${data[key].telepon || "-"}</div>
-          <div class="anggota-info"><b>Rekening:</b> ${data[key].rekening || "-"}</div>
-          ${aksiHTML}
+          <div class="anggota-info"><b>ID:</b> <span>${data[key].id}</span></div>
+          <div class="anggota-info"><b>Alamat:</b> <span>${data[key].alamat || "-"}</span></div>
+          <div class="anggota-info"><b>Telepon:</b> <span>${data[key].telepon || "-"}</span></div>
+          <div class="anggota-info"><b>Rekening:</b> <span>${data[key].rekening || "-"}</span></div>
         </div>
       `;
     }
   }
 });
 
-/* ================= TAMBAH ================= */
+// ================= TAMBAH =================
 window.tambahAnggota = async function(){
   const nama = document.getElementById("nama").value.trim();
   const alamat = document.getElementById("alamat").value.trim();
@@ -207,40 +569,109 @@ window.tambahAnggota = async function(){
   document.getElementById("rekening").value="";
 }
 
-/* ================= EDIT ================= */
+// ================= EDIT POPUP =================
+let editKey = null;
+let namaLama = "";
+
 window.editAnggota = async function(key){
-  if(role !== "admin") return alert("Hanya admin yang bisa edit");
+  if(role!== "admin") return;
 
   const snapshot = await get(ref(db,"/anggota/"+key));
   if(!snapshot.exists()) return;
   const data = snapshot.val();
 
-  const namaBaru = prompt("Edit Nama:", data.nama);
-  if(namaBaru===null) return;
-  const alamatBaru = prompt("Edit Alamat:", data.alamat);
-  if(alamatBaru===null) return;
-  const teleponBaru = prompt("Edit Telepon:", data.telepon);
-  if(teleponBaru===null) return;
-  const rekeningBaru = prompt("Edit Rekening:", data.rekening);
-  if(rekeningBaru===null) return;
+  editKey = key;
+  namaLama = data.nama;
 
-  await update(ref(db,"/anggota/"+key),{
-    nama:namaBaru, alamat:alamatBaru, telepon:teleponBaru, rekening:rekeningBaru
+  document.getElementById("editId").value = data.id || "-";
+  document.getElementById("editNama").value = data.nama || "";
+  document.getElementById("editAlamat").value = data.alamat || "";
+  document.getElementById("editTelepon").value = data.telepon || "";
+  document.getElementById("editRekening").value = data.rekening || "";
+
+  document.getElementById("popupEdit").style.display = "flex";
+}
+
+window.tutupPopupEdit = function(){
+  document.getElementById("popupEdit").style.display = "none";
+  editKey = null;
+  namaLama = "";
+}
+
+// ================= SIMPAN EDIT + CASCADE =================
+window.simpanEdit = async function(){
+  if(!editKey) return;
+
+  const namaBaru = document.getElementById("editNama").value.trim();
+  const alamat = document.getElementById("editAlamat").value.trim();
+  const telepon = document.getElementById("editTelepon").value.trim();
+  const rekening = document.getElementById("editRekening").value.trim();
+
+  if(!namaBaru) return alert("Nama wajib diisi");
+
+  // 1. UPDATE ANGGOTA
+  await update(ref(db,"/anggota/"+editKey),{
+    nama: namaBaru, alamat, telepon, rekening
   });
-  alert("Data berhasil diupdate");
+
+  // 2. CASCADE UPDATE KALO NAMA BERUBAH
+  if(namaLama && namaLama!== namaBaru){
+    const updates = {};
+    const tables = ['kas', 'simpanan', 'pinjaman', 'angsuran'];
+
+    for(const table of tables){
+      const snap = await get(ref(db,`/${table}`));
+      if(snap.exists()){
+        snap.forEach(child => {
+          if(child.val().nama === namaLama){
+            updates[`/${table}/${child.key}/nama`] = namaBaru;
+          }
+        });
+      }
+    }
+
+    if(Object.keys(updates).length > 0){
+      await update(ref(db), updates);
+    }
+  }
+
+  tutupPopupEdit();
+  alert("Data anggota + semua transaksi berhasil diupdate");
 }
 
-/* ================= HAPUS ================= */
-window.hapusAnggota = function(key){
-  if(role !== "admin") return alert("Hanya admin yang bisa hapus");
-  if(confirm("Yakin hapus anggota?")) remove(ref(db,"/anggota/"+key));
+// ================= HAPUS + CASCADE =================
+window.hapusDariPopup = async function(){
+  if(!editKey) return;
+  if(!confirm("Yakin hapus anggota ini? SEMUA data kas/simpanan/pinjaman/angsuran atas nama ini juga ikut kehapus!")) return;
+
+  const updates = {};
+
+  // Hapus anggota
+  updates[`/anggota/${editKey}`] = null;
+
+  // Hapus semua transaksi terkait
+  const tables = ['kas', 'simpanan', 'pinjaman', 'angsuran'];
+  for(const table of tables){
+    const snap = await get(ref(db,`/${table}`));
+    if(snap.exists()){
+      snap.forEach(child => {
+        if(child.val().nama === namaLama){
+          updates[`/${table}/${child.key}`] = null;
+        }
+      });
+    }
+  }
+
+  await update(ref(db), updates);
+  tutupPopupEdit();
+  alert("Anggota + semua data transaksi berhasil dihapus");
 }
 
-/* ================= KEMBALI ================= */
-window.kembali = function(){
-  window.location.href="dashboard.html";
-}
+// Klik overlay tutup popup
+document.getElementById("popupEdit").addEventListener("click", function(e){
+  if(e.target === this) tutupPopupEdit();
+});
+
 </script>
-
 </body>
 </html>
