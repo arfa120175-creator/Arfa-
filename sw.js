@@ -1,4 +1,4 @@
-const CACHE_NAME = "arfa-koperasi-v3";
+const CACHE_NAME = "arfa-koperasi-v4";
 const urlsToCache = [
   "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
   "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js",
