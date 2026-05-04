@@ -186,11 +186,9 @@
         <div id="jam">00:00:00</div>
         <div id="salam">Selamat datang</div>
       </div>
-      <img id="logoKop" src="img/icon-512.png" alt="Logo koperasi App" class="logo">
-
-
-
-
+      
+       <img src="./img/icon-512.png" alt="Logo School Bus App" class="logo">
+      
       <h1>Koperasi App</h1>
 
       <p>
@@ -202,7 +200,7 @@
         </div>
 
     <div class="footer">
-      Versi 1.0 • Mobile Friendly
+      Versi 1.02 • Mobile Friendly
     </div>
   </div>
 
@@ -236,10 +234,7 @@ function updateWaktu() {
 
 updateWaktu();
 setInterval(updateWaktu, 1000);
-  // Auto fix path kalo PWA
-if (window.matchMedia('(display-mode: standalone)').matches) {
-  document.getElementById('logoKop').src = '/img/icon-512.png';
-}
+  
   </script>
 </body>
 </html>
