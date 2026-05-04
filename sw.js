@@ -1,24 +1,25 @@
 const CACHE_NAME = "arfa-koperasi-v3";
-const urlsToCache = [
+  const urlsToCache = [
   "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
   "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js",
-  "./img/ims.png",
-  "./img/icon-192.png",
-  "./img/icon-512.png",  // <-- koma ditambahkan
-  "./",
-  "./index.html",
-  "./dashboard.html",
-  "./anggota.html",
-  "./kas.html",
-  "./simpanan.html",
-  "./pinjaman.html",
-  "./angsuran.html",
-  "./lap-kas.html",
-  "./pencairan.html",
-  "./backup.html",
-  "./manifest.json"
-];
 
+  "/img/ims.png",
+  "/img/icon-192.png",
+  "/img/icon-512.png",
+
+  "/",
+  "/index.html",
+  "/dashboard.html",
+  "/anggota.html",
+  "/kas.html",
+  "/simpanan.html",
+  "/pinjaman.html",
+  "/angsuran.html",
+  "/lap-kas.html",
+  "/pencairan.html",
+  "/backup.html",
+  "/manifest.json"
+];
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
